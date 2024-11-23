@@ -125,6 +125,8 @@ internal static class BootContext
             LightingAndObscurementContext.LateLoad();
             GrappleContext.LateLoad();
 
+            Playhouse.LateLoad();
+
             // Spell Points should load closer to the bottom after all other blueprints initiated
             SpellPointsContext.LateLoad();
 
