@@ -144,7 +144,7 @@ internal static class ToolsDisplay
         if (UI.Toggle(Gui.Localize("ModUi/&DisableTorsoDefaultVisuals"), ref toggle, UI.AutoWidth()))
         {
             Main.Settings.DisableTorsoDefaultVisuals = toggle;
-            Playhouse.TorsoNoDefaultVisual();
+            Playhouse.SwitchTorsoNoDefaultVisual();
         }
 
         UI.Label();

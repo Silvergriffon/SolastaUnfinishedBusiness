@@ -13,11 +13,11 @@ internal class Playhouse
 {
     internal static void LateLoad()
     {
-        TorsoNoDefaultVisual();
+        SwitchTorsoNoDefaultVisual();
         UnlockBackerItems();
      }
 
-    internal static void TorsoNoDefaultVisual()
+    internal static void SwitchTorsoNoDefaultVisual()
     {
             DatabaseHelper.SlotTypeDefinitions.TorsoSlot.hasDefaultVisual = !Main.Settings.DisableTorsoDefaultVisuals;
     }
