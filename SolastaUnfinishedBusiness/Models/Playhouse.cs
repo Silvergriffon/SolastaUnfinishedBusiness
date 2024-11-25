@@ -4,6 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SolastaUnfinishedBusiness.Api;
+using SolastaUnfinishedBusiness.Builders;
+using static SolastaUnfinishedBusiness.Api.DatabaseHelper.ItemDefinitions;
+using static SolastaUnfinishedBusiness.Api.DatabaseHelper.LootPackDefinitions;
 
 namespace SolastaUnfinishedBusiness.Models;
 internal class Playhouse
@@ -21,9 +24,9 @@ internal class Playhouse
 
     private static void UnlockBackerItems()
     {
-        DatabaseHelper.LootPackDefinitions.Backers_Lootpack_Items.contentPack = GamingPlatformDefinitions.ContentPack.BaseGame;
-        DatabaseHelper.LootPackDefinitions.Backers_Lootpack_Items_B_Cumulative.contentPack = GamingPlatformDefinitions.ContentPack.BaseGame;
-        DatabaseHelper.LootPackDefinitions.Backers_Lootpack_Items_C_Cumulative.contentPack = GamingPlatformDefinitions.ContentPack.BaseGame;
+        Backers_Lootpack_Items.contentPack = GamingPlatformDefinitions.ContentPack.BaseGame;
+        Backers_Lootpack_Items_B_Cumulative.contentPack = GamingPlatformDefinitions.ContentPack.BaseGame;
+        Backers_Lootpack_Items_C_Cumulative.contentPack = GamingPlatformDefinitions.ContentPack.BaseGame;
 
         foreach (var item in DatabaseRepository.GetDatabase<ItemDefinition>()
                     .Where(x => x.ContentPack == GamingPlatformDefinitions.ContentPack.BackerItems ||
@@ -34,6 +37,6 @@ internal class Playhouse
         }
 
         DatabaseHelper.SpellDefinitions.BurningHands_B.contentPack = GamingPlatformDefinitions.ContentPack.BaseGame;
-        DatabaseHelper.SpellDefinitions.SacredFlame_B.contentPack = GamingPlatformDefinitions.ContentPack.BaseGame;
+        DatabaseHelper.SpellDefinitions.SacredFlame_B.contentPack = GamingPlatformDefinitions.ContentPack.BaseGame;           
     } 
 }
