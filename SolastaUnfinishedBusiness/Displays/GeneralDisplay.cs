@@ -139,6 +139,14 @@ internal static class ToolsDisplay
             UI.Label(Gui.Localize("ModUi/&EnableCustomPortraitsHelp"));
         }
 
+        //Playhouse
+        toggle = Main.Settings.DisableTorsoDefaultVisuals;
+        if (UI.Toggle(Gui.Localize("ModUi/&DisableTorsoDefaultVisuals"), ref toggle, UI.AutoWidth()))
+        {
+            Main.Settings.DisableTorsoDefaultVisuals = toggle;
+            Playhouse.TorsoNoDefaultVisual();
+        }
+
         UI.Label();
 
         toggle = Main.Settings.DisableMultilineSpellOffering;

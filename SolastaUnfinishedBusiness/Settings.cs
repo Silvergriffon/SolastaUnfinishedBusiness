@@ -63,6 +63,11 @@ public class Settings : UnityModManager.ModSettings
     public bool DisableStreamlinedMultiLevelUp { get; set; } = true;
 
     //
+    // Playhouse
+    //
+    public bool DisableTorsoDefaultVisuals { get; set; }
+    
+    //
     // Gameplay - General
     //
 

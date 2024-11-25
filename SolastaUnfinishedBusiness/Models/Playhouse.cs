@@ -17,9 +17,9 @@ internal class Playhouse
         UnlockBackerItems();
      }
 
-    private static void TorsoNoDefaultVisual()
+    internal static void TorsoNoDefaultVisual()
     {
-        DatabaseHelper.SlotTypeDefinitions.TorsoSlot.hasDefaultVisual = false;
+            DatabaseHelper.SlotTypeDefinitions.TorsoSlot.hasDefaultVisual = !Main.Settings.DisableTorsoDefaultVisuals;
     }
 
     private static void UnlockBackerItems()

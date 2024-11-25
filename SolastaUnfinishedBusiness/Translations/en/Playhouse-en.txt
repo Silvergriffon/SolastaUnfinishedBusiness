@@ -1,0 +1,1 @@
+ModUi/&DisableTorsoDefaultVisuals=Disable Torso default visuals
