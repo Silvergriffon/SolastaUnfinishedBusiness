@@ -148,7 +148,7 @@ ModUi/&EnableMonkWeaponSpecialization=Aktiviere <color=#D89555>Waffenspezialisie
 ModUi/&EnableMulticlass=Aktivieren Sie <color=#D89555>Multiclass</color> <b><i><color=#C04040E0>[Neustart erforderlich]</color></i></b>
 ModUi/&EnableOneDnDPreparedSpellsTables=Ermöglichen Sie allen <color=#D89555>Zauberern</color> die Verwendung neuer vorbereiteter Zaubertabellen <i><color=#F0DAA0>[Barde, Kleriker, Druide, Paladin, Waldläufer, Zauberer, Magier]</color></i>
 ModUi/&EnableOneDndBarkskinSpell=Aktiviere <color=#D89555>Barkskin</color> 5e 2024 Zauberversion <i><color=#F0DAA0>[Bonusaktion, keine Konzentration, AC auf 17 gesetzt]</color></i>
-ModUi/&EnableOneDndDamagingSpellsUpgrade=Aktiviere <color=#D89555>Arkanes Schwert</color>, <color=#D89555>Kreis des Todes</color>, <color=#D89555>Flammenschlag</color>, <color=#D89555>Eissturm</color> und <color=#D89555>Bösartige Verhöhnung</color> 5e 2024 Zauberversion <i><color=#F0DAA0>[besserer Schaden]</color></i>
+ModUi/&EnableOneDndDamagingSpellsUpgrade=Aktiviere <color=#D89555>Arkanes Schwert</color>, <color=#D89555>Kreis des Todes</color>, <color=#D89555>Flammenschlag</color>, <color=#D89555>Eissturm</color>, <color=#D89555>Prismatischer Sprühnebel</color>. und <color=#D89555>Bösartige Verhöhnung</color> 5e 2024 Zauberversion <i><color=#F0DAA0>[besserer Schaden]</color></i>
 ModUi/&EnableOneDndDivineFavorSpell=Aktivieren Sie die Zauberversion <color=#D89555>Göttliche Gunst</color> 5e 2024 <i><color=#F0DAA0>[keine Konzentration]</color></i>
 ModUi/&EnableOneDndGuidanceSpell=Aktivieren Sie die Zauberversion <color=#D89555>Anleitung</color> 5e 2024 <i><color=#F0DAA0>[Wählen Sie beim Zaubern eine Fertigkeit aus und erhalten Sie bis zu 1 Minute lang einen Bonus.]</color></i>
 ModUi/&EnableOneDndHealingSpellsUpgrade=Aktiviere <color=#D89555>Wunden heilen</color>, <color=#D89555>Falsches Leben</color>, <color=#D89555>Heilendes Wort</color>, <color=#D89555>Massenheilung von Wunden</color> und <color=#D89555>Massenheilungswort</color> 5e 2024 Zauberversion <i><color=#F0DAA0>[bessere Heilung]</color></i>
@@ -185,7 +185,6 @@ ModUi/&EnableSorcererQuickenedAction=Aktivieren Sie die Aktion <color=#D89555>Be
 ModUi/&EnableSorcerousRestorationAtLevel5=Aktiviere <color=#D89555>Zauberhafte Wiederherstellung</color> auf Stufe 5.
 ModUi/&EnableSortingDungeonMakerAssets=Aktivieren Sie die Sortierung von Assets im Dungeon Maker-Editor.
 ModUi/&EnableSpeech=Sprache in benutzerdefinierten Kampagnen aktivieren <i><color=#F0DAA0>[Nur Erzählung]</color></i>
-ModUi/&EnableSpeechFemaleVoice=<i>+ Verwenden Sie eine weibliche Stimme</i>
 ModUi/&EnableStatsOnHeroTooltip=Statistiken im Tooltip des Helden anzeigen <i><color=#F0DAA0>[z. B.: kritische Treffer, kritische Fehlschläge usw.]</color></i>
 ModUi/&EnableSumD20OnAlternateVotingSystem=<i>+ Außerdem fügt jeder Held einen D20-Wurf zur Gewichtung hinzu, um ein wenig Zufälligkeit zu erzeugen <color=#F0DAA0>[Wahlgewicht = Stimmen * Charisma-Modifikator des Helden + D20-Wurf]</color></i>
 ModUi/&EnableSurprisedToEnforceDisadvantage=Aktivieren Sie die Bedingung <color=#D89555>Überrascht</color>, um einen Initiativenachteil durchzusetzen, anstatt eine Runde zu überspringen.
@@ -347,6 +346,7 @@ ModUi/&TotalFeatsGrantedFirstLevel=<color=white>Insgesamt die auf der ersten Stu
 ModUi/&Translate=Übersetzen
 ModUi/&TranslateCancel=Stornieren Sie {0} bei {1}
 ModUi/&Translations=<color=#F0DAA0>Übersetzungen:</color>
+ModUi/&UnityExplorer=<b><color=#D89555>Unity Explorer-Benutzeroberfläche</color></b>
 ModUi/&UnleashEnemyAsNpc=Erlaube die Auswahl von Monstern auf NPC-Geräten
 ModUi/&UnleashNpcAsEnemy=Monsterauswahl freischalten
 ModUi/&Update=<b><color=#D89555>Aktualisieren</color></b>

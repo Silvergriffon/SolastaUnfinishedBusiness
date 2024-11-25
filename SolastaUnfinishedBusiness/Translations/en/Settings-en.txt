@@ -148,7 +148,7 @@ ModUi/&EnableMonkWeaponSpecialization=Enable <color=#D89555>Weapon Specializatio
 ModUi/&EnableMulticlass=Enable <color=#D89555>multiclass</color> <b><i><color=#C04040E0>[Requires Restart]</color></i></b>
 ModUi/&EnableOneDnDPreparedSpellsTables=Enable all <color=#D89555>Casters</color> to use new prepared spells tables <i><color=#F0DAA0>[Bard, Cleric, Druid, Paladin, Ranger, Sorcerer, Wizard]</color></i>
 ModUi/&EnableOneDndBarkskinSpell=Enable <color=#D89555>Barkskin</color> 5e 2024 spell version <i><color=#F0DAA0>[bonus action, no concentration, AC set to 17]</color></i>
-ModUi/&EnableOneDndDamagingSpellsUpgrade=Enable <color=#D89555>Arcane Sword</color>, <color=#D89555>Circle of Death</color>, <color=#D89555>Flame Strike</color>, <color=#D89555>Ice Storm</color>, and <color=#D89555>Vicious Mockery</color> 5e 2024 spells version <i><color=#F0DAA0>[better damage]</color></i>
+ModUi/&EnableOneDndDamagingSpellsUpgrade=Enable <color=#D89555>Arcane Sword</color>, <color=#D89555>Circle of Death</color>, <color=#D89555>Flame Strike</color>, <color=#D89555>Ice Storm</color>, <color=#D89555>Prismatic Spray</color>. and <color=#D89555>Vicious Mockery</color> 5e 2024 spells version <i><color=#F0DAA0>[better damage]</color></i>
 ModUi/&EnableOneDndDivineFavorSpell=Enable <color=#D89555>Divine Favor</color> 5e 2024 spell version <i><color=#F0DAA0>[no concentration]</color></i>
 ModUi/&EnableOneDndGuidanceSpell=Enable <color=#D89555>Guidance</color> 5e 2024 spell version <i><color=#F0DAA0>[choose one skill at casting and get bonus for up to 1 minute]</color></i>
 ModUi/&EnableOneDndHealingSpellsUpgrade=Enable <color=#D89555>Cure Wounds</color>, <color=#D89555>False Life</color>, <color=#D89555>Healing Word</color>, <color=#D89555>Mass Cure Wounds</color>, and <color=#D89555>Mass Healing Word</color> 5e 2024 spells version <i><color=#F0DAA0>[better healing]</color></i>
@@ -185,13 +185,13 @@ ModUi/&EnableSorcererQuickenedAction=Enable <color=#D89555>Quickened Spell</colo
 ModUi/&EnableSorcerousRestorationAtLevel5=Enable <color=#D89555>Sorcerous Restoration</color> at level 5
 ModUi/&EnableSortingDungeonMakerAssets=Enable assets sorting on Dungeon Maker editor
 ModUi/&EnableSpeech=Enable speech on custom campaigns <i><color=#F0DAA0>[narration only]</color></i>
-ModUi/&EnableSpeechFemaleVoice=<i>+ Use a female voice</i>
 ModUi/&EnableStatsOnHeroTooltip=Display stats on hero's tooltip <i><color=#F0DAA0>[i.e.: critical hits, critical failures, etc.]</color></i>
 ModUi/&EnableSumD20OnAlternateVotingSystem=<i>+ Also each hero adds a D20 roll to weight for a bit of randomness <color=#F0DAA0>[choice weight = votes * hero Charisma modifier + D20 roll]</color></i>
 ModUi/&EnableSurprisedToEnforceDisadvantage=Enable <color=#D89555>Surprised</color> condition to enforce initiative disadvantage instead of skipping a round
 ModUi/&EnableTeleportToRemoveRestrained=Enable <color=#D89555>Teleport</color> to remove all <color=#D89555>restrained</color> conditions from target
 ModUi/&EnableTooltipDistance=Enable showing distance on tooltips when hovering over a character in combat
 ModUi/&EnableUnarmedMainAttackAction=Enable the <color=#D89555>Unarmed Attack</color> action <i><color=#F0DAA0>[if actor has weapon in main, is a <b>Monk</b> or has <b>handwraps</b> or <b>gauntlet</b> equipped]</color></i>
+ModUi/&EnableUnlimitedInventoryActions=Enable an unlimited number of <color=#D89555>inventory actions</color> per turn.
 ModUi/&EnableUpcastConjureElementalAndFey=Enable upcast of <color=#D89555>Conjure Elemental</color> and <color=#D89555>Conjure Fey</color>
 ModUi/&EnableVariablePlaceholdersOnTexts=Enable variable placeholders on descriptions <i><color=#F0DAA0>[use {VARIABLE_NAME} as placeholder]</color></i>
 ModUi/&EnableVersatileAmmunitionSlots=Allow <color=#D89555>Potions</color> and <color=#D89555>Scrolls</color> to be carried and used in the Ammunition slots
@@ -347,6 +347,7 @@ ModUi/&TotalFeatsGrantedFirstLevel=<color=white>Total <color=#D89555>feats</colo
 ModUi/&Translate=Translate
 ModUi/&TranslateCancel=Cancel {0} at {1}
 ModUi/&Translations=<color=#F0DAA0>Translations:</color>
+ModUi/&UnityExplorer=<b><color=#D89555>Unity Explorer UI</color></b>
 ModUi/&UnleashEnemyAsNpc=Allow monsters to be selected on NPC gadgets
 ModUi/&UnleashNpcAsEnemy=Unlock monsters selection
 ModUi/&Update=<b><color=#D89555>Update</color></b>

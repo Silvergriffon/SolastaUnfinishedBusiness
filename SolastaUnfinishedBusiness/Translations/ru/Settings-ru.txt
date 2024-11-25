@@ -148,7 +148,7 @@ ModUi/&EnableMonkWeaponSpecialization=Включить <color=#D89555>Специ
 ModUi/&EnableMulticlass=Включить <color=#D89555>мультиклассирование</color> <b><i><color=#C04040E0>[Необходим перезапуск]</color></i></b>
 ModUi/&EnableOneDnDPreparedSpellsTables=Включить всем <color=#D89555>Заклинателям</color> использовать новые таблицы подготовленных заклинаний <i><color=#F0DAA0>[Бард, Жрец, Друид, Паладин, Следопыт, Чародей, Волшебник]</color></i>
 ModUi/&EnableOneDndBarkskinSpell=Включить версию заклинания <color=#D89555>Дубовая кора</color> из 5e 2024 <i><color=#F0DAA0>[бонусное действие, не требует концентрации, КД на 17]</color></i>
-ModUi/&EnableOneDndDamagingSpellsUpgrade=Включить версии заклинаний <color=#D89555>Магический меч</color>, <color=#D89555>Круг смерти</color>, <color=#D89555>Огненный удар</color>, <color=#D89555>Град</color> и <color=#D89555>Злая насмешка</color> из 5e 2024 <i><color=#F0DAA0>[больше урона]</color></i>
+ModUi/&EnableOneDndDamagingSpellsUpgrade=Включить <color=#D89555>Arcane Sword</color>, <color=#D89555>Circle of Death</color>, <color=#D89555>Flame Strike</color>, <color=#D89555>Ice Storm</color>, <color=#D89555>Prismatic Spray</color> и <color=#D89555>Vicious Mockery</color> версии заклинаний 5e 2024 <i><color=#F0DAA0>[лучший урон]</color></i>
 ModUi/&EnableOneDndDivineFavorSpell=Включить версию заклинания <color=#D89555>Божественное благоволение</color> из 5e 2024 <i><color=#F0DAA0>[не требует концентрации]</color></i>
 ModUi/&EnableOneDndGuidanceSpell=Включить версию заклинания <color=#D89555>Указание</color> из 5e 2024 <i><color=#F0DAA0>[Выберите один навык при наложении и получите бонус на срок до 1 минуты]</color></i>
 ModUi/&EnableOneDndHealingSpellsUpgrade=Включить версии заклинаний <color=#D89555>Лечение ран</color>, <color=#D89555>Псевдожизнь</color>, <color=#D89555>Лечащее слово</color>, <color=#D89555>Множественное лечение ран</color> и <color=#D89555>Множественное лечащее слово</color> из 5e 2024 <i><color=#F0DAA0>[больше исцеления]</color></i>
@@ -185,7 +185,6 @@ ModUi/&EnableSorcererQuickenedAction=Включить действие <color=#D
 ModUi/&EnableSorcerousRestorationAtLevel5=Включить <color=#D89555>Чародейское восстановление</color> на уровне 5
 ModUi/&EnableSortingDungeonMakerAssets=Включить сортировку ассетов в редакторе Создателя Подземелий
 ModUi/&EnableSpeech=Включить речь в пользовательских кампаниях <i><color=#F0DAA0>[только закадровый текст]</color></i>
-ModUi/&EnableSpeechFemaleVoice=<i>+ Используйте женский голос</i>
 ModUi/&EnableStatsOnHeroTooltip=Отображать статистику на всплывающей подсказке о герое <i><color=#F0DAA0>[например: критические удары, критические промахи и т.д.]</color></i>
 ModUi/&EnableSumD20OnAlternateVotingSystem=<i>+ Также каждый герой добавляет к весомости результат броска D20 для привнесения элемента случайности <color=#F0DAA0>[весомость выбора = голоса * модификатор Харизмы героя + бросок D20]</color></i>
 ModUi/&EnableSurprisedToEnforceDisadvantage=Включить изменения для состояния <color=#D89555>Застигнут врасплох</color>: бросок инициативы совершается с помехой вместо пропуска раунда
@@ -347,6 +346,7 @@ ModUi/&TotalFeatsGrantedFirstLevel=<color=white>Общее количество 
 ModUi/&Translate=Перевести
 ModUi/&TranslateCancel=Отменить {0} перевод на {1}
 ModUi/&Translations=<color=#F0DAA0>Переводы:</color>
+ModUi/&UnityExplorer=<b><color=#D89555>Пользовательский интерфейс Unity Explorer</color></b>
 ModUi/&UnleashEnemyAsNpc=Позволить выбирать монстров в качестве НИП-предметов
 ModUi/&UnleashNpcAsEnemy=Разблокировать выбор монстров
 ModUi/&Update=<b><color=#D89555>Обновить</color></b>

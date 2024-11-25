@@ -148,7 +148,7 @@ ModUi/&EnableMonkWeaponSpecialization=레벨 2와 11에서 <color=#D89555>무기
 ModUi/&EnableMulticlass=<color=#D89555>다중클래스</color> 활성화 <b><i><color=#C04040E0>[재시작 필요]</color></i></b>
 ModUi/&EnableOneDnDPreparedSpellsTables=모든 <color=#D89555>주문자</color>가 새로 준비된 주문표 <i><color=#F0DAA0>[바드, 성직자, 드루이드, 성기사, 레인저, 마법사, 마법사]</color></i>를 사용할 수 있도록 합니다.
 ModUi/&EnableOneDndBarkskinSpell=<color=#D89555>Barkskin</color> 5e 2024 주문 버전 활성화 <i><color=#F0DAA0>[보너스 액션, 집중 없음, AC 17로 설정]</color></i>
-ModUi/&EnableOneDndDamagingSpellsUpgrade=<color=#D89555>비전의 검</color>, <color=#D89555>죽음의 원</color>, <color=#D89555>불꽃 일격</color>, <color=#D89555>얼음 폭풍</color>, <color=#D89555>사악한 조롱</color> 5e 2024 주문 버전 <i><color=#F0DAA0>[더 높은 데미지]</color></i>을 활성화합니다.
+ModUi/&EnableOneDndDamagingSpellsUpgrade=<color=#D89555>비전의 검</color>, <color=#D89555>죽음의 원</color>, <color=#D89555>불꽃 일격</color>, <color=#D89555>얼음 폭풍</color>, <color=#D89555>프리즘 스프레이</color>, <color=#D89555>사악한 조롱</color> 5e 2024 주문 버전 <i><color=#F0DAA0>[더 나은 데미지]</color></i>을 활성화합니다.
 ModUi/&EnableOneDndDivineFavorSpell=<color=#D89555>신성한 호의</color> 5e 2024 주문 버전 활성화 <i><color=#F0DAA0>[집중 없음]</color></i>
 ModUi/&EnableOneDndGuidanceSpell=<color=#D89555>지침</color> 5e 2024 주문 버전을 활성화합니다. <i><color=#F0DAA0>[시전 시 스킬 하나를 선택하고 최대 1분 동안 보너스를 받습니다.]</color></i>
 ModUi/&EnableOneDndHealingSpellsUpgrade=<color=#D89555>상처 치료</color>, <color=#D89555>거짓 생명</color>, <color=#D89555>치유의 말씀</color>, <color=#D89555>대량 상처 치료</color>, <color=#D89555>대량 치유의 말씀</color> 5e 2024 주문 버전 <i><color=#F0DAA0>[치유력 향상]</color></i>을 활성화합니다.
@@ -185,7 +185,6 @@ ModUi/&EnableSorcererQuickenedAction=<color=#D89555>빠른 주문</color> 동작
 ModUi/&EnableSorcerousRestorationAtLevel5=레벨 5에서 <color=#D89555>마법 회복</color>을 활성화합니다.
 ModUi/&EnableSortingDungeonMakerAssets=Dungeon Maker 편집기에서 자산 정렬 활성화
 ModUi/&EnableSpeech=사용자 정의 캠페인에서 음성 활성화 <i><color=#F0DAA0>[내레이션만]</color></i>
-ModUi/&EnableSpeechFemaleVoice=<i>+ 여성 목소리를 사용하세요</i>
 ModUi/&EnableStatsOnHeroTooltip=영웅의 툴팁에 통계 표시 <i><color=#F0DAA0>[예: 치명타, 치명타 실패 등]</color></i>
 ModUi/&EnableSumD20OnAlternateVotingSystem=<i>+ 또한 각 영웅은 약간의 무작위성을 위해 D20 롤을 가중치에 추가합니다 <color=#F0DAA0>[선택 가중치 = 투표 * 영웅 카리스마 수정치 + D20 롤]</color></i>
 ModUi/&EnableSurprisedToEnforceDisadvantage=라운드를 건너뛰는 대신 이니셔티브 불이익을 적용하려면 <color=#D89555>놀람</color> 조건을 활성화하세요.
@@ -347,6 +346,7 @@ ModUi/&TotalFeatsGrantedFirstLevel=<color=white>1레벨에서 부여된 총 <col
 ModUi/&Translate=번역하다
 ModUi/&TranslateCancel={1}에 {0} 취소
 ModUi/&Translations=<color=#F0DAA0>번역:</color>
+ModUi/&UnityExplorer=<b><color=#D89555>유니티 익스플로러 UI</color></b>
 ModUi/&UnleashEnemyAsNpc=NPC 가젯에서 몬스터 선택 허용
 ModUi/&UnleashNpcAsEnemy=몬스터 선택 잠금 해제
 ModUi/&Update=<b><color=#D89555>업데이트</color></b>
