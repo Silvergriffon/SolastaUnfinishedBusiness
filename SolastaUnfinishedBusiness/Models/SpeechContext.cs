@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
@@ -22,13 +23,27 @@ internal static class SpeechContext
     private const string PiperWindowsDownloadURL =
         "https://github.com/rhasspy/piper/releases/download/2023.11.14-2/piper_windows_amd64.zip";
 
-    private static readonly string PiperFolder = Path.Combine(Main.ModFolder, "piper");
+    private static readonly string PiperFolder =
+        Path.Combine(
+            Main.ModFolder,
+            Path.Combine(
+                RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+                    ? "piper_linux_x86_64" // linux unzips to piper_linux_x86_64/piper folder
+                    : Path.Combine(
+                        RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
+                            ? "piper_macos_x64" // macos unzips to piper_macos_x64/piper folder
+                            : "."), // windows unzips to ./piper folder
+                "piper"));
+
     private static readonly string VoicesFolder = Path.Combine(Main.ModFolder, "Voices");
 
     private static readonly string[] Voices =
     [
         "en/en_GB/alan/medium/en_GB-alan-medium",
         "en/en_GB/alba/medium/en_GB-alba-medium",
+        "en/en_GB/aru/medium/en_GB-aru-medium",
+        "en/en_GB/cori/medium/en_GB-cori-medium",
+        "en/en_GB/jenny_dioco/medium/en_GB-jenny_dioco-medium",
         "en/en_GB/northern_english_male/medium/en_GB-northern_english_male-medium",
         "en/en_US/hfc_female/medium/en_US-hfc_female-medium",
         "en/en_US/hfc_male/medium/en_US-hfc_male-medium",
@@ -36,6 +51,17 @@ internal static class SpeechContext
         "en/en_US/kristin/medium/en_US-kristin-medium",
         "en/en_US/lessac/medium/en_US-lessac-medium",
         "en/en_US/ryan/medium/en_US-ryan-medium"
+    ];
+
+    internal static readonly string[] Choices =
+    [
+        "Narrator",
+        "Hero 1",
+        "Hero 2",
+        "Hero 3",
+        "Hero 4",
+        "Hero 5",
+        "Hero 6"
     ];
 
     internal static readonly WaveOutEvent WaveOutEvent = new();
@@ -144,53 +170,64 @@ internal static class SpeechContext
         "Chuck Norris doesn't need to wear a watch, he simply decides what time it is."
     ];
 
-    internal static readonly string[] VoiceNames = Voices.Select(x => x.Split('/')[2].Replace("_", " ")).ToArray();
+    internal static readonly string[] VoiceNames = new List<string> { "None" }
+        .Union(Voices.Select(x => x.Split('/')[2].Replace("_", " "))).ToArray();
+
+    private static readonly Random Quoteziner = new();
 
     internal static void Load()
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        // init voices
+        for (var i = 0; i <= 6; i++)
         {
-            DownloadPiper(PiperLinuxDownloadURL);
-        }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            DownloadPiper(PiperOSXDownloadURL);
-        }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            DownloadPiper(PiperWindowsDownloadURL);
+            Main.Settings.SpeechVoices.TryAdd(i, (0, 1f));
         }
 
+        DownloadPiper();
         DownloadVoices();
     }
 
     internal static void SpeakQuote()
     {
-        var random = new Random();
-        var quoteNumber = random.Next(0, Quotes.Length);
+        var quoteNumber = Quoteziner.Next(0, Quotes.Length);
 
-        Speak(Quotes[quoteNumber]);
+        Speak(Quotes[quoteNumber], Main.Settings.SpeechChoice, false);
     }
 
-    //TODO: how to integrate an unity Mono Behavior with async / await?
-    internal static async void Speak(string inputText)
+    // heroId zero is the Narrator and 1-6 map to possible heroes in party
+    internal static async void Speak(string inputText, int heroId, bool forceUseCampaign = true)
     {
         try
         {
-            // only custom campaigns
-            if (Gui.GameCampaign)
+            if (!Main.Settings.EnableSpeech || heroId < 0)
             {
-                if (Gui.GameCampaign.campaignDefinition.IsUserCampaign)
+                return;
+            }
+
+            var (voiceId, scale) = Main.Settings.SpeechVoices[heroId];
+
+            if (voiceId == 0)
+            {
+                return;
+            }
+
+            // only custom campaigns
+            if (forceUseCampaign)
+            {
+                // unity life check...
+                if (Gui.GameCampaign)
                 {
-                    return;
+                    if (!Gui.GameCampaign.campaignDefinition.IsUserCampaign)
+                    {
+                        return;
+                    }
                 }
             }
 
-            // only if audio and feature enabled
+            // only if audio enabled
             var audioSettingsService = ServiceRepository.GetService<IAudioSettingsService>();
 
-            if (!Main.Settings.EnableSpeech ||
-                !audioSettingsService.MasterEnabled)
+            if (!audioSettingsService.MasterEnabled)
             {
                 return;
             }
@@ -199,11 +236,12 @@ internal static class SpeechContext
             {
                 var audioStream = new MemoryStream();
                 var buffer = new byte[16384];
+                var narratorVoice = Voices[voiceId - 1];
                 var executable = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "piper.exe" : "piper";
-                var modelName = Path.GetFileName(Voices[Main.Settings.SpeechVoice]);
+                var modelName = Path.GetFileName(narratorVoice);
                 var modelFileName = Path.Combine(VoicesFolder, modelName + ".onnx");
                 var piper = new Process();
-                var scale = Main.Settings.SpeechScale;
+
                 int bytesRead;
 
                 piper.StartInfo.FileName = Path.Combine(PiperFolder, executable);
@@ -247,10 +285,26 @@ internal static class SpeechContext
         }
     }
 
-    private static void DownloadPiper(string url)
+    private static void DownloadPiper()
     {
+        string url;
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            url = PiperLinuxDownloadURL;
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            url = PiperOSXDownloadURL;
+        }
+        else
+        {
+            url = PiperWindowsDownloadURL;
+        }
+
         var message = "Piper successfully downloaded.";
-        var fullZipFile = Path.Combine(Main.ModFolder, "piper_windows_amd64.zip");
+        var filename = Path.GetFileName(url);
+        var fullZipFile = Path.Combine(Main.ModFolder, filename);
         var wc = new WebClient();
 
         try
