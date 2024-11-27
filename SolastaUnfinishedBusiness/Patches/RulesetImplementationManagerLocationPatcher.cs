@@ -10,8 +10,10 @@ using SolastaUnfinishedBusiness.Api.GameExtensions;
 using SolastaUnfinishedBusiness.Api.Helpers;
 using SolastaUnfinishedBusiness.Api.LanguageExtensions;
 using SolastaUnfinishedBusiness.Behaviors;
+using SolastaUnfinishedBusiness.Models;
 using SolastaUnfinishedBusiness.Spells;
 using SolastaUnfinishedBusiness.Validators;
+using TA;
 using static RuleDefinitions;
 
 namespace SolastaUnfinishedBusiness.Patches;
@@ -102,6 +104,46 @@ public static class RulesetImplementationManagerLocationPatcher
     [UsedImplicitly]
     public static class ApplyMotionForm_Patch
     {
+        private static void TeleportCharacter(
+            IGameLocationPositioningService __instance,
+            GameLocationCharacter character,
+            int3 newPosition,
+            LocationDefinitions.Orientation orientation)
+        {
+            if (Main.Settings.EnableTeleportToRemoveRestrained)
+            {
+                var rulesetCharacter = character.RulesetCharacter;
+                var conditionsToRemove = rulesetCharacter.ConditionsByCategory
+                    .SelectMany(x => x.Value)
+                    .Where(x =>
+                        x.ConditionDefinition.IsSubtypeOf(ConditionRestrained) &&
+                        (character.Side == Side.Ally ||
+                         x.ConditionDefinition.Name != SpellBuilders.ConditionTelekinesisRestrainedName))
+                    .ToArray();
+
+                foreach (var activeCondition in conditionsToRemove)
+                {
+                    rulesetCharacter.RemoveCondition(activeCondition);
+                }
+            }
+
+            __instance.TeleportCharacter(character, newPosition, orientation);
+        }
+
+        [NotNull]
+        [UsedImplicitly]
+        public static IEnumerable<CodeInstruction> Transpiler([NotNull] IEnumerable<CodeInstruction> instructions)
+        {
+            var teleportCharacterMethod = typeof(IGameLocationPositioningService).GetMethod("TeleportCharacter");
+            var myTeleportCharacterMethod =
+                new Action<IGameLocationPositioningService, GameLocationCharacter, int3,
+                    LocationDefinitions.Orientation>(TeleportCharacter).Method;
+
+            return instructions.ReplaceCalls(teleportCharacterMethod,
+                "CharacterStageClassSelectionPanel.Refresh",
+                new CodeInstruction(OpCodes.Call, myTeleportCharacterMethod)); // checked for Call vs CallVirtual
+        }
+
         [UsedImplicitly]
         public static bool Prefix(EffectForm effectForm, RulesetImplementationDefinitions.ApplyFormsParams formsParams)
         {
@@ -118,6 +160,13 @@ public static class RulesetImplementationManagerLocationPatcher
             }
 
             return useDefaultLogic;
+        }
+
+        [UsedImplicitly]
+        public static void Postfix(RulesetImplementationDefinitions.ApplyFormsParams formsParams)
+        {
+            GrappleContext.ValidateGrappleAfterMotion(GameLocationCharacter.GetFromActor(formsParams.sourceCharacter));
+            GrappleContext.ValidateGrappleAfterMotion(GameLocationCharacter.GetFromActor(formsParams.targetCharacter));
         }
 
         private static bool CustomSwap(
