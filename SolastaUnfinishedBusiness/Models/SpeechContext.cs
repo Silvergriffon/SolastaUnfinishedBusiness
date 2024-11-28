@@ -7,6 +7,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using HarmonyLib;
 using JetBrains.Annotations;
@@ -34,8 +35,15 @@ internal static class SpeechContext
 
     private const string NoVoice = "No Voice";
 
+    private const string CampaignVoiceLootpackPrefix = "VOICE";
+
+    // should consider translating these
     internal static readonly string[] Choices = new List<string> { "Narrator" }
         .Union(Enumerable.Range(1, MaxHeroes).Select(n => $"Hero {n}")).ToArray();
+
+
+    private static readonly Regex RemoveNpcSpeechTags =
+        new(@"<[bci/].*?>|\*.+?\*|\(.+?\)|\[.+?\]|\{.+?\}", RegexOptions.Compiled);
 
     private static readonly string PiperFolder =
         Path.Combine(
@@ -50,6 +58,8 @@ internal static class SpeechContext
                 "piper"));
 
     private static readonly string VoicesFolder = Path.Combine(Main.ModFolder, Path.Combine("..", "Voices"));
+
+    private static readonly WaveOutEvent WaveOutEvent = new();
 
     private static readonly (string, Gender)[] SuggestedVoicesUrls =
     [
@@ -75,10 +85,114 @@ internal static class SpeechContext
         ($"{OfficialVoicesURLPrefix}en/en_US/libritts_r/medium/en_US-libritts_r-medium", Gender.Female),
         ($"{OfficialVoicesURLPrefix}en/en_US/ljspeech/medium/en_US-ljspeech-medium", Gender.Female),
         ($"{OfficialVoicesURLPrefix}en/en_US/norman/medium/en_US-norman-medium", Gender.Male),
-        ($"{OfficialVoicesURLPrefix}en/en_US/ryan/medium/en_US-ryan-medium", Gender.Male)
+        ($"{OfficialVoicesURLPrefix}en/en_US/ryan/medium/en_US-ryan-medium", Gender.Male),
+        ("https://huggingface.co/poisson-fish/piper-vasco/resolve/main/onnx/vasco", Gender.Male),
+        ("https://huggingface.co/quarterturn/kuroki_tomoko_en_piper/resolve/main/kuroki_tomoko", Gender.Female)
     ];
 
-    internal static readonly WaveOutEvent WaveOutEvent = new();
+    private static readonly string[] FemaleNpcs =
+    [
+        "Aristocrat_Adria",
+        "Aristocrat_Lyria",
+        "Atima_Bladeburn",
+        "Beryl_Stonebeard",
+        "Bitterroot",
+        "Caer_Cyflen_Guard",
+        "CaerCyflenCityGuard_NewEmpire_Female",
+        "Captain_Verissa_Ironshell",
+        "Ceiwad_Silverflower",
+        "Circe",
+        "Council_Trooper",
+        "CultistGuard",
+        "Daliat_Sunbird",
+        "DLC1_Complex_NPC_Guard_Recruit",
+        "DLC1_Complex_NPC_Guard_Watcher",
+        "DLC1_Complex_NPC_Trainer_01",
+        "DLC1_NPC_2_Marches_Helia_Fairblade",
+        "DLC1_NPC_3_Marches_Rogue_Leyrin_Catpaw",
+        "DLC1_NPC_Armorer_Gail_Hunt",
+        "DLC1_NPC_CityGuard_Captain_ThePeople04",
+        "DLC1_NPC_Finaliel",
+        "DLC1_NPC_Forge_Ravener",
+        "DLC1_NPC_Malariel",
+        "DLC1_NPC_Mask_CafrainShadow",
+        "DLC1_NPC_Merchant_Mask_Yasmin",
+        "DLC1_NPC_Rebelion_Ellaria_Anfarel",
+        "DLC1_NPC_Rebellion_Blue",
+        "DLC1_NPC_Rebellion_Red",
+        "DLC1_NPC_Rebellion_Sima_Temple",
+        "DLC1_NPC_ThePeople_Karelia",
+        "DLC1_NPC_ThePeople_Reya",
+        "DLC1_NPC_ThePeople_Rose",
+        "DLC1_NPC_ThePeople_Tortured",
+        "DLC1_NPC_Witch_Neutral",
+        "DLC1_Orc_Shaman_Leader",
+        "DLC1_Valley_NPC_Samko_Flint",
+        "DLC3_Berghild_StrongSpine",
+        "DLC3_Beryl_Stonebeard",
+        "DLC3_Council_Trooper_1",
+        "DLC3_ElvenClans_DragonbornIntermediate",
+        "DLC3_ElvenClans_ElfAdvisor2",
+        "DLC3_ElvenClans_Leralyn",
+        "DLC3_Gallivan_Royals_TheCousin",
+        "DLC3_Gallivan_Royals_TheQueen",
+        "DLC3_Gallivan_Suspect01",
+        "DLC3_Gallivan_Suspect02",
+        "DLC3_GarradSoldier02",
+        "DLC3_GarradSoldier03",
+        "DLC3_GarradSoldier0C",
+        "DLC3_Grimhild_DarkHead",
+        "DLC3_Kara_WiseHead",
+        "DLC3_Lena_Switfhand",
+        "DLC3_Lisbath_Townsend",
+        "DLC3_Misouk",
+        "DLC3_NPC_Crowd8_DLC3_Ending",
+        "DLC3_NPC_Einareum_Merchant_General",
+        "DLC3_NPC_Einareum_Merchant_Weapons",
+        "DLC3_NPC_ElvenClans_Greybear_Hunter",
+        "DLC3_NPC_ElvenClans_Guard",
+        "DLC3_NPC_ElvenClans_GuardCaptain",
+        "DLC3_NPC_GenericScavengerScout",
+        "DLC3_NPC_Helia_Fairblade",
+        "DLC3_NPC_HumanClans_Guard",
+        "DLC3_NPC_HumanClans1_DLC3_Ending",
+        "DLC3_NPC_HumanClansLeader",
+        "DLC3_NPC_Narrator_DLC3_Ending",
+        "DLC3_NPC_NorthernClans_Merchant_Ingredients",
+        "DLC3_NPC_SouthernClans_Caretaker",
+        "DLC3_NPC_SouthernClans_Cousin_Kaikonnen",
+        "DLC3_NPC_SouthernClans_Innkeeper",
+        "DLC3_NPC_SouthernClans_Merchant_Clan",
+        "DLC3_NPC_SouthernClans_Merchant_General",
+        "DLC3_NPC_SouthernClans_Merchant_Ingredients",
+        "DLC3_NPC_SouthernClans_Merchant_Scavenger",
+        "DLC3_NPC_WhiteCity_Guard_Captain",
+        "DLC3_NPC_WhiteCity_Trapper_Family_01",
+        "DLC3_Undermountain_EttivenGuard",
+        "DLC3_Undermountain_Investigation_Informant",
+        "DLC3_Undermountain_PerlevinnGuard_Banter",
+        "DLC3_Vigdis_Kaikonnen",
+        "DLC3_Violet_Goodcheer",
+        "DLC3_WhiteCity_MotherYoungDwarf",
+        "DLC3_WhiteCity_YoungDwarf",
+        "Heather_Merran",
+        "Hertha_Gormsdottir",
+        "Joriel_Foxeye",
+        "Kebra",
+        "Kythaela",
+        "Leira_Kean",
+        "Lena",
+        "Lisbath_Townsend",
+        "Maddy_Greenisle",
+        "Maid_Coparann",
+        "Mayor_Kiaradth_Bright-Spark",
+        "Merchant_Annie_Bagmordah",
+        "Merchant_Gorim_Ironsoot",
+        "Milan",
+        "Mildred_Warmhearth",
+        "Philosopher_Illoreth",
+        "Priestess_Of_Pakri_Elaine_Velasco"
+    ];
 
     private static readonly string[] Quotes =
     [
@@ -186,9 +300,18 @@ internal static class SpeechContext
 
     private static readonly Random Quoteziner = new();
 
-    private static readonly List<string> AvailableVoices = [];
+    private static readonly List<string> AvailableFemaleVoices = [];
+
+    private static readonly List<string> AvailableMaleVoices = [];
+
+    private static readonly Dictionary<string, string> CampaignVoices = [];
 
     internal static string[] VoiceNames { get; private set; }
+
+    internal static string StripXmlTagsAndNarration(string str)
+    {
+        return RemoveNpcSpeechTags.Replace(str.Replace("<#57BCF4>", "\r\n\t"), string.Empty);
+    }
 
     internal static void Load()
     {
@@ -196,213 +319,6 @@ internal static class SpeechContext
         RefreshAvailableVoices();
         InitVoiceAssignments();
         UpdateAvailableVoices();
-    }
-
-    private static void InitVoiceAssignments()
-    {
-        // remove any invalid key
-        Main.Settings.SpeechVoices.Keys
-            .Where(x => x is <= 0 or > MaxHeroes)
-            .ToList()
-            .Do(x => Main.Settings.SpeechVoices.Remove(x));
-
-        for (var i = 0; i <= MaxHeroes; i++)
-        {
-            Main.Settings.SpeechVoices.TryAdd(i, (NoVoice, 0.8f));
-
-            if (!VoiceNames.Contains(Main.Settings.SpeechVoices[i].Item1))
-            {
-                Main.Settings.SpeechVoices[i] = (NoVoice, 0.8f);
-            }
-        }
-    }
-
-    internal static void UpdateAvailableVoices()
-    {
-        var assignedVoices = Main.Settings.SpeechVoices.Values.Select(x => x.Item1).Distinct().ToArray();
-
-        AvailableVoices.SetRange(VoiceNames.Where(x => !assignedVoices.Contains(x) && x != NoVoice));
-    }
-
-    internal static void RefreshAvailableVoices()
-    {
-        var directoryInfo = new DirectoryInfo(VoicesFolder);
-        var voices = directoryInfo.GetFiles("*.onnx").Select(x => x.Name.Replace(".onnx", string.Empty)).ToList();
-
-        VoiceNames = new List<string> { NoVoice }.Union(voices).ToArray();
-    }
-
-    internal static void SpeakQuote()
-    {
-        var quoteNumber = Quoteziner.Next(0, Quotes.Length);
-        var subjects = new[] { "Chuck Norris", "Zappa" };
-        var subject = subjects[Quoteziner.Next(0, subjects.Length)];
-        var quote = Quotes[quoteNumber].Replace("{Subject}", subject);
-
-        Speak(quote, Main.Settings.SpeechChoice, false);
-    }
-
-    // heroId zero is the Narrator and 1-6 map to possible heroes in party
-    internal static async void Speak(string inputText, int heroId, bool forceUseCampaign = true)
-    {
-        try
-        {
-            if (!Main.Settings.EnableSpeech || heroId < 0 || heroId > MaxHeroes)
-            {
-                return;
-            }
-
-            var (voice, scale) = Main.Settings.SpeechVoices[heroId];
-            var voiceId = Array.IndexOf(VoiceNames, voice);
-
-            if (voiceId <= 0)
-            {
-                return;
-            }
-
-            // only custom campaigns
-            if (forceUseCampaign)
-            {
-                // unity life check...
-                if (Gui.GameCampaign)
-                {
-                    if (!Gui.GameCampaign.campaignDefinition.IsUserCampaign)
-                    {
-                        return;
-                    }
-                }
-            }
-
-            // only if audio enabled
-            var audioSettingsService = ServiceRepository.GetService<IAudioSettingsService>();
-
-            if (!audioSettingsService.MasterEnabled)
-            {
-                return;
-            }
-
-            var task = Task.Run(async () =>
-            {
-                var audioStream = new MemoryStream();
-                var buffer = new byte[16384];
-                var voiceName = VoiceNames[voiceId];
-                var executable = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "piper.exe" : "piper";
-                var modelFileName = Path.Combine(VoicesFolder, voiceName + ".onnx");
-                var piper = new Process();
-
-                int bytesRead;
-
-                piper.StartInfo.FileName = Path.Combine(PiperFolder, executable);
-                piper.StartInfo.Arguments = $"--model \"{modelFileName}\" --length_scale {scale:F} --output-raw";
-                piper.StartInfo.UseShellExecute = false;
-                piper.StartInfo.CreateNoWindow = true;
-                piper.StartInfo.RedirectStandardInput = true;
-                piper.StartInfo.RedirectStandardOutput = true;
-                piper.Start();
-
-                using var writer = piper.StandardInput;
-
-                await writer.WriteAsync(inputText);
-                writer.Close();
-
-                while ((bytesRead = await piper.StandardOutput.BaseStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
-                {
-                    audioStream.Write(buffer, 0, bytesRead);
-                }
-
-                return audioStream;
-            });
-            var audioStream = await task;
-
-            audioStream.Position = 0;
-
-            using var waveStream = new RawSourceWaveStream(audioStream, new WaveFormat(22050, 1));
-
-            while (WaveOutEvent.PlaybackState == PlaybackState.Playing)
-            {
-                await Task.Delay(100);
-            }
-
-            WaveOutEvent.Stop();
-            WaveOutEvent.Init(waveStream);
-            WaveOutEvent.Volume = audioSettingsService.MasterVolume * audioSettingsService.VoicesVolume;
-            WaveOutEvent.Play();
-        }
-        catch (Exception e)
-        {
-            Main.Error(e);
-        }
-    }
-
-    internal static async void SpeakNpc(string inputText, int npcId)
-    {
-        try
-        {
-            if (!Main.Settings.EnableSpeechOnNpcs || npcId < 0)
-            {
-                return;
-            }
-
-            // only if audio enabled
-            var audioSettingsService = ServiceRepository.GetService<IAudioSettingsService>();
-
-            if (!audioSettingsService.MasterEnabled)
-            {
-                return;
-            }
-
-            var task = Task.Run(async () =>
-            {
-                var voiceId = npcId % AvailableVoices.Count;
-                var audioStream = new MemoryStream();
-                var buffer = new byte[16384];
-                var voiceName = AvailableVoices[voiceId];
-                var executable = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "piper.exe" : "piper";
-                var modelFileName = Path.Combine(VoicesFolder, voiceName + ".onnx");
-                var piper = new Process();
-
-                int bytesRead;
-
-                piper.StartInfo.FileName = Path.Combine(PiperFolder, executable);
-                piper.StartInfo.Arguments = $"--model \"{modelFileName}\" --output-raw";
-                piper.StartInfo.UseShellExecute = false;
-                piper.StartInfo.CreateNoWindow = true;
-                piper.StartInfo.RedirectStandardInput = true;
-                piper.StartInfo.RedirectStandardOutput = true;
-                piper.Start();
-
-                using var writer = piper.StandardInput;
-
-                await writer.WriteAsync(inputText);
-                writer.Close();
-
-                while ((bytesRead = await piper.StandardOutput.BaseStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
-                {
-                    audioStream.Write(buffer, 0, bytesRead);
-                }
-
-                return audioStream;
-            });
-            var audioStream = await task;
-
-            audioStream.Position = 0;
-
-            using var waveStream = new RawSourceWaveStream(audioStream, new WaveFormat(22050, 1));
-
-            while (WaveOutEvent.PlaybackState == PlaybackState.Playing)
-            {
-                await Task.Delay(100);
-            }
-
-            WaveOutEvent.Stop();
-            WaveOutEvent.Init(waveStream);
-            WaveOutEvent.Volume = audioSettingsService.MasterVolume * audioSettingsService.VoicesVolume;
-            WaveOutEvent.Play();
-        }
-        catch (Exception e)
-        {
-            Main.Error(e);
-        }
     }
 
     private static void InitPiper()
@@ -430,7 +346,7 @@ internal static class SpeechContext
         var message = "Piper successfully downloaded.";
         var filename = Path.GetFileName(url);
         var fullZipFile = Path.Combine(Main.ModFolder, filename);
-        var wc = new WebClient();
+        using var wc = new WebClient();
 
         try
         {
@@ -451,6 +367,315 @@ internal static class SpeechContext
         }
 
         Main.Info(message);
+    }
+
+    internal static void RefreshAvailableVoices()
+    {
+        var directoryInfo = new DirectoryInfo(VoicesFolder);
+        var voices = directoryInfo.GetFiles("*.onnx").Select(x => x.Name.Replace(".onnx", string.Empty));
+
+        VoiceNames = new List<string> { NoVoice }.Union(voices).ToArray();
+    }
+
+    private static void InitVoiceAssignments()
+    {
+        // remove any invalid key
+        Main.Settings.SpeechVoices.Keys
+            .Where(x => x is < 0 or > MaxHeroes)
+            .Do(x => Main.Settings.SpeechVoices.Remove(x));
+
+        for (var i = 0; i <= MaxHeroes; i++)
+        {
+            Main.Settings.SpeechVoices.TryAdd(i, (NoVoice, 0.8f));
+
+            if (!VoiceNames.Contains(Main.Settings.SpeechVoices[i].Item1))
+            {
+                Main.Settings.SpeechVoices[i] = (NoVoice, 0.8f);
+            }
+        }
+    }
+
+    internal static void UpdateAvailableVoices()
+    {
+        var assignedVoices = Main.Settings.SpeechVoices.Values.Select(x => x.Item1).Distinct().ToArray();
+
+        AvailableFemaleVoices.SetRange(
+            VoiceNames
+                .Where(x =>
+                    x != NoVoice &&
+                    !assignedVoices.Contains(x) &&
+                    SuggestedVoicesUrls
+                        .Any(y => y.Item1.Contains(x) && y.Item2 == Gender.Female)));
+
+        AvailableMaleVoices.SetRange(
+            VoiceNames
+                .Where(x =>
+                    x != NoVoice &&
+                    !assignedVoices.Contains(x) &&
+                    SuggestedVoicesUrls
+                        .Any(y => y.Item1.Contains(x) && y.Item2 == Gender.Male)));
+    }
+
+    internal static void CollectCurrentCampaignNpcsVoiceTips()
+    {
+        CampaignVoices.Clear();
+
+        var userCampaign = Gui.Session.UserCampaign;
+
+        if (userCampaign == null)
+        {
+            return;
+        }
+
+        var lootPacks = userCampaign.UserLootPacks
+            .Where(x =>
+                x.InternalName.StartsWith(CampaignVoiceLootpackPrefix, StringComparison.OrdinalIgnoreCase))
+            .ToDictionary(x => x.InternalName.Replace(CampaignVoiceLootpackPrefix + "_", string.Empty),
+                x => x.DisplayTitle);
+
+        foreach (var kvp in lootPacks)
+        {
+            var npc = kvp.Key;
+            var voice = kvp.Value;
+
+            if (!VoiceNames.Contains(voice))
+            {
+                continue;
+            }
+
+            if (userCampaign.UserNpcs.Any(x => x.InternalName == npc))
+            {
+                CampaignVoices.Add(npc, voice);
+            }
+            else
+            {
+                var userNpc = userCampaign.UserNpcs.FirstOrDefault(x => x.DisplayTitle == npc);
+
+                if (userNpc != null)
+                {
+                    CampaignVoices.Add(userNpc.InternalName, voice);
+                }
+            }
+        }
+    }
+
+    internal static void ShutUp()
+    {
+        WaveOutEvent.Stop();
+    }
+
+    internal static void SpeakQuote()
+    {
+        var quoteNumber = Quoteziner.Next(0, Quotes.Length);
+        var subjects = new[] { "Chuck Norris", "Zappa" };
+        var subject = subjects[Quoteziner.Next(0, subjects.Length)];
+        var quote = Quotes[quoteNumber].Replace("{Subject}", subject);
+
+        Speak(quote, Main.Settings.SpeechChoice, false);
+    }
+
+    internal static void Speak(string inputText, GameLocationCharacter character)
+    {
+        var index = Gui.Game.GameCampaign.Party.CharactersList
+            .FindIndex(x => x.RulesetCharacter == character.RulesetCharacter);
+
+        if (index < 0)
+        {
+            return;
+        }
+
+        Speak(inputText, index + 1);
+    }
+
+    // heroId zero is the Narrator and 1-6 map to heroes in party
+    internal static async void Speak(string inputText, int heroId, bool forceUseCampaign = true)
+    {
+        try
+        {
+            WaveOutEvent.Stop();
+
+            // only if audio enabled
+            var audioSettingsService = ServiceRepository.GetService<IAudioSettingsService>();
+
+            if (!audioSettingsService.MasterEnabled)
+            {
+                return;
+            }
+
+            if (!Main.Settings.EnableSpeech || heroId < 0 || heroId > MaxHeroes)
+            {
+                return;
+            }
+
+            var executable = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "piper.exe" : "piper";
+            var executablePath = Path.Combine(PiperFolder, executable);
+
+            if (!File.Exists(executablePath))
+            {
+                return;
+            }
+
+            var (voice, scale) = Main.Settings.SpeechVoices[heroId];
+            var voiceId = Array.IndexOf(VoiceNames, voice);
+
+            if (voiceId <= 0)
+            {
+                return;
+            }
+
+            // only custom campaigns
+            if (forceUseCampaign)
+            {
+                // unity life check...
+                if (Gui.GameCampaign)
+                {
+                    if (!Gui.GameCampaign.campaignDefinition.IsUserCampaign)
+                    {
+                        return;
+                    }
+                }
+            }
+
+            var voiceName = VoiceNames[voiceId];
+            var task = Task.Run(async () => await GetPiperTask(executablePath, voiceName, scale, inputText));
+            var audioStream = await task;
+
+            using var waveStream = new RawSourceWaveStream(audioStream, new WaveFormat(22050, 1));
+
+            PlaySpeech(audioSettingsService, waveStream);
+        }
+        catch (Exception e)
+        {
+            Main.Error(e);
+        }
+    }
+
+    internal static async void SpeakNpc(string inputText, GameLocationCharacter character)
+    {
+        try
+        {
+            ShutUp();
+
+            // only if audio enabled
+            var audioSettingsService = ServiceRepository.GetService<IAudioSettingsService>();
+
+            if (!audioSettingsService.MasterEnabled)
+            {
+                return;
+            }
+
+            if (!Main.Settings.EnableSpeechOnNpcs)
+            {
+                return;
+            }
+
+            var executable = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "piper.exe" : "piper";
+            var executablePath = Path.Combine(PiperFolder, executable);
+
+            if (!File.Exists(executablePath))
+            {
+                return;
+            }
+
+            if (character.RulesetCharacter is not RulesetCharacterMonster rulesetCharacterMonster)
+            {
+                return;
+            }
+
+            var npcName = rulesetCharacterMonster.MonsterDefinition.Name;
+
+            if (Main.Settings.ForceModSpeechOnNpcs ||
+                !CampaignVoices.TryGetValue(npcName, out var voiceName))
+            {
+                // don't auto assign voices on campaigns that have dub data
+                if (!Main.Settings.ForceModSpeechOnNpcs && CampaignVoices.Count > 0)
+                {
+                    return;
+                }
+
+                // assign dub data on a round-robin basis for campaigns without it
+                var userNpc = Gui.Session.UserCampaign?.UserNpcs?.FirstOrDefault(x => x.InternalName == npcName);
+
+                if (userNpc == null)
+                {
+                    return;
+                }
+
+                var npcId = Gui.Session.UserCampaign.UserNpcs.IndexOf(userNpc);
+
+                if (npcId < 0)
+                {
+                    return;
+                }
+
+                switch (FemaleNpcs.Contains(userNpc.ReferenceMonsterDefinition.Name))
+                {
+                    case true when AvailableFemaleVoices.Count > 0:
+                    {
+                        voiceName = AvailableFemaleVoices[npcId % AvailableFemaleVoices.Count];
+                        break;
+                    }
+                    case false when AvailableMaleVoices.Count > 0:
+                    {
+                        voiceName = AvailableMaleVoices[npcId % AvailableMaleVoices.Count];
+                        break;
+                    }
+                    default:
+                        return;
+                }
+            }
+
+            var scale = Main.Settings.SpeechVoices[0].Item2;
+            var task = Task.Run(async () => await GetPiperTask(executablePath, voiceName, scale, inputText));
+            var audioStream = await task;
+
+            using var waveStream = new RawSourceWaveStream(audioStream, new WaveFormat(22050, 1));
+
+            PlaySpeech(audioSettingsService, waveStream);
+        }
+        catch (Exception e)
+        {
+            Main.Error(e);
+        }
+    }
+
+    private static void PlaySpeech(IAudioSettingsService audioSettingsService, WaveStream waveStream)
+    {
+        waveStream.Position = 0;
+
+        WaveOutEvent.Init(waveStream);
+        WaveOutEvent.Volume = audioSettingsService.MasterVolume * audioSettingsService.VoicesVolume;
+        WaveOutEvent.Play();
+    }
+
+    private static async Task<MemoryStream> GetPiperTask(
+        string executablePath, string voiceName, float scale, string inputText)
+    {
+        var audioStream = new MemoryStream();
+        var buffer = new byte[16384];
+        var modelFileName = Path.Combine(VoicesFolder, voiceName + ".onnx");
+        var piper = new Process();
+        int bytesRead;
+
+        piper.StartInfo.FileName = executablePath;
+        piper.StartInfo.Arguments = $"--model \"{modelFileName}\" --length_scale {scale:F} --output-raw";
+        piper.StartInfo.UseShellExecute = false;
+        piper.StartInfo.CreateNoWindow = true;
+        piper.StartInfo.RedirectStandardInput = true;
+        piper.StartInfo.RedirectStandardOutput = true;
+        piper.Start();
+
+        using var writer = piper.StandardInput;
+
+        await writer.WriteAsync(StripXmlTagsAndNarration(inputText));
+        writer.Close();
+
+        while ((bytesRead = await piper.StandardOutput.BaseStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+        {
+            audioStream.Write(buffer, 0, bytesRead);
+        }
+
+        return audioStream;
     }
 
     private enum Gender { Male, Female }
@@ -501,7 +726,7 @@ internal static class SpeechContext
 
         private IEnumerator DownloadVoicesImpl()
         {
-            var wc = new WebClient();
+            using var wc = new WebClient();
 
             if (!Directory.Exists(VoicesFolder))
             {
