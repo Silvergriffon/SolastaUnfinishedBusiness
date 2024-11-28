@@ -151,6 +151,18 @@ internal static class Tabletop2024Context
 
     private static readonly List<SpellDefinition> GuidanceSubSpells = [];
 
+    private static readonly ConditionDefinition ConditionSorcererInnateSorcery = ConditionDefinitionBuilder
+        .Create("ConditionSorcererInnateSorcery")
+        .SetGuiPresentation(Category.Condition, ConditionAuraOfCourage)
+        .SetFeatures(
+            FeatureDefinitionMagicAffinityBuilder
+                .Create("MagicAffinitySorcererInnateSorcery")
+                .SetGuiPresentation("PowerSorcererInnateSorcery", Category.Feature)
+                .SetCastingModifiers(0, SpellParamsModifierType.None, 1)
+                .AddToDB())
+        .AddCustomSubFeatures(new ModifyAttackActionModifierInnateSorcery())
+        .AddToDB();
+
     private static readonly FeatureDefinitionPower PowerSorcererInnateSorcery = FeatureDefinitionPowerBuilder
         .Create("PowerSorcererInnateSorcery")
         .SetGuiPresentation(Category.Feature, PowerTraditionShockArcanistGreaterArcaneShock)
@@ -160,21 +172,26 @@ internal static class Tabletop2024Context
                 .Create()
                 .SetDurationData(DurationType.Minute, 1)
                 .SetTargetingData(Side.Ally, RangeType.Self, 0, TargetType.Self)
-                .SetEffectForms(EffectFormBuilder.ConditionForm(
-                    ConditionDefinitionBuilder
-                        .Create("ConditionSorcererInnateSorcery")
-                        .SetGuiPresentation(Category.Condition, ConditionAuraOfCourage)
-                        .SetFeatures(
-                            FeatureDefinitionMagicAffinityBuilder
-                                .Create("MagicAffinitySorcererInnateSorcery")
-                                .SetGuiPresentation("PowerSorcererInnateSorcery", Category.Feature)
-                                .SetCastingModifiers(0, SpellParamsModifierType.None, 1)
-                                .AddToDB())
-                        .AddCustomSubFeatures(new ModifyAttackActionModifierInnateSorcery())
-                        .AddToDB()))
+                .SetEffectForms(EffectFormBuilder.ConditionForm(ConditionSorcererInnateSorcery))
                 .SetCasterEffectParameters(PowerSorcererDraconicElementalResistance)
                 .Build())
+        .AddCustomSubFeatures(new ValidatorsValidatePowerUse(c =>
+            c.GetClassLevel(Sorcerer) < 7 || c.GetRemainingPowerUses(PowerSorcererInnateSorcery) > 0))
         .AddToDB();
+
+    private static readonly FeatureDefinitionPower PowerSorcererSorceryIncarnate = FeatureDefinitionPowerBuilder
+        .Create(PowerSorcererInnateSorcery, "PowerSorcererSorceryIncarnate")
+        .SetUsesFixed(ActivationTime.BonusAction, RechargeRate.SorceryPoints, 2, 0)
+        .AddCustomSubFeatures(new ValidatorsValidatePowerUse(c =>
+            c.GetClassLevel(Sorcerer) >= 7 && c.GetRemainingPowerUses(PowerSorcererInnateSorcery) == 0))
+        .AddToDB();
+
+    private static readonly FeatureDefinitionFeatureSet FeatureSetSorcererSorceryIncarnate =
+        FeatureDefinitionFeatureSetBuilder
+            .Create("FeatureSetSorcererSorceryIncarnate")
+            .SetGuiPresentation(Category.Feature)
+            .SetFeatureSet(PowerSorcererSorceryIncarnate)
+            .AddToDB();
 
     private static readonly FeatureDefinitionPower FeatureDefinitionPowerNatureShroud = FeatureDefinitionPowerBuilder
         .Create("PowerRangerNatureShroud")
@@ -291,6 +308,21 @@ internal static class Tabletop2024Context
             ConditionForm.ConditionOperation.Add)
         .Build();
 
+    private static readonly FeatureDefinition FeatureFighterTacticalMind = FeatureDefinitionBuilder
+        .Create("FeatureFighterTacticalMind")
+        .SetGuiPresentation(Category.Feature)
+        .AddToDB();
+
+    private static readonly FeatureDefinition FeatureFighterTacticalShift = FeatureDefinitionBuilder
+        .Create("FeatureFighterTacticalShift")
+        .SetGuiPresentation(Category.Feature)
+        .AddToDB();
+
+    private static readonly FeatureDefinition FeatureFighterStudiedAttacks = FeatureDefinitionBuilder
+        .Create("FeatureFighterStudiedAttacks")
+        .SetGuiPresentation(Category.Feature)
+        .AddToDB();
+
     internal static void LateLoad()
     {
         BuildBarbarianBrutalStrike();
@@ -310,6 +342,8 @@ internal static class Tabletop2024Context
         SwitchDruidWeaponProficiencyToUseOneDnd();
         SwitchSpellRitualOnAllCasters();
         SwitchFighterLevelToIndomitableSavingReroll();
+        SwitchFighterStudiedAttacks();
+        SwitchFighterTacticalProgression();
         SwitchMonkBodyAndMindToReplacePerfectSelf();
         SwitchMonkDoNotRequireAttackActionForBonusUnarmoredAttack();
         SwitchMonkDoNotRequireAttackActionForFlurry();
@@ -377,6 +411,30 @@ internal static class Tabletop2024Context
             Main.Settings.AddFighterLevelToIndomitableSavingReroll
                 ? "Feature/&EnhancedIndomitableResistanceDescription"
                 : "Feature/&IndomitableResistanceDescription";
+    }
+
+    internal static void SwitchFighterStudiedAttacks()
+    {
+        Fighter.FeatureUnlocks.RemoveAll(x => x.FeatureDefinition == FeatureFighterStudiedAttacks);
+
+        if (Main.Settings.EnableFighterStudiedAttacks)
+        {
+            Fighter.FeatureUnlocks.Add(new FeatureUnlockByLevel(FeatureFighterStudiedAttacks, 13));
+        }
+    }
+
+    internal static void SwitchFighterTacticalProgression()
+    {
+        Fighter.FeatureUnlocks.RemoveAll(x =>
+            x.FeatureDefinition == FeatureFighterTacticalMind ||
+            x.FeatureDefinition == FeatureFighterTacticalShift);
+
+        if (Main.Settings.EnableFighterTacticalProgression)
+        {
+            Fighter.FeatureUnlocks.AddRange(
+                new FeatureUnlockByLevel(FeatureFighterTacticalMind, 2),
+                new FeatureUnlockByLevel(FeatureFighterTacticalShift, 5));
+        }
     }
 
     internal static void SwitchSecondWindToUseOneDndUsagesProgression()
@@ -1193,11 +1251,15 @@ internal static class Tabletop2024Context
 
     internal static void SwitchSorcererInnateSorcery()
     {
-        Sorcerer.FeatureUnlocks.RemoveAll(x => x.FeatureDefinition == PowerSorcererInnateSorcery);
+        Sorcerer.FeatureUnlocks.RemoveAll(x =>
+            x.FeatureDefinition == PowerSorcererInnateSorcery ||
+            x.FeatureDefinition == FeatureSetSorcererSorceryIncarnate);
 
         if (Main.Settings.EnableSorcererInnateSorceryAt1)
         {
-            Sorcerer.FeatureUnlocks.Add(new FeatureUnlockByLevel(PowerSorcererInnateSorcery, 1));
+            Sorcerer.FeatureUnlocks.AddRange(
+                new FeatureUnlockByLevel(PowerSorcererInnateSorcery, 1),
+                new FeatureUnlockByLevel(FeatureSetSorcererSorceryIncarnate, 7));
         }
 
         Sorcerer.FeatureUnlocks.Sort(Sorting.CompareFeatureUnlock);
@@ -2401,10 +2463,12 @@ internal static class Tabletop2024Context
         .SetSilent(Silent.WhenAddedOrRemoved)
         .SetConditionType(ConditionType.Detrimental)
         .SetAmountOrigin(ConditionDefinition.OriginOfAmount.Fixed)
+        .AllowMultipleInstances()
         .SetSpecialInterruptions(ConditionInterruption.Attacks)
         .AddToDB();
 
     private static FeatureDefinitionFeatureSet _featureSetRogueCunningStrike;
+    private static FeatureDefinition _featureRogueImprovedCunningStrike;
     private static FeatureDefinitionFeatureSet _featureSetRogueDeviousStrike;
 
     private static void BuildRogueCunningStrike()
@@ -2667,13 +2731,18 @@ internal static class Tabletop2024Context
         _featureSetRogueCunningStrike = FeatureDefinitionFeatureSetBuilder
             .Create($"FeatureSet{Cunning}")
             .SetGuiPresentation($"Power{Cunning}", Category.Feature)
-            .AddFeatureSet(powerPool, actionAffinityToggle, powerDisarm, powerPoison, powerTrip, powerWithdraw)
+            .SetFeatureSet(powerPool, actionAffinityToggle, powerDisarm, powerPoison, powerTrip, powerWithdraw)
+            .AddToDB();
+
+        _featureRogueImprovedCunningStrike = FeatureDefinitionBuilder
+            .Create($"FeatureImproved{Cunning}")
+            .SetGuiPresentation(Category.Feature)
             .AddToDB();
 
         _featureSetRogueDeviousStrike = FeatureDefinitionFeatureSetBuilder
             .Create($"FeatureSet{Devious}")
             .SetGuiPresentation($"Power{Devious}", Category.Feature)
-            .AddFeatureSet(powerDaze, powerKnockOut, powerObscure)
+            .SetFeatureSet(powerDaze, powerKnockOut, powerObscure)
             .AddToDB();
     }
 
@@ -2778,15 +2847,26 @@ internal static class Tabletop2024Context
                 yield break;
             }
 
+            var aborted = false;
+            var attempts = rulesetAttacker.GetClassLevel(Rogue) >= 11 ? 2 : 1;
             var usablePower = PowerProvider.Get(powerRogueCunningStrike, rulesetAttacker);
 
-            yield return attacker.MyReactToSpendPowerBundle(
-                usablePower,
-                [defender],
-                attacker,
-                powerRogueCunningStrike.Name,
-                reactionValidated: ReactionValidated,
-                battleManager: battleManager);
+            for (var i = 0; i < attempts; i++)
+            {
+                yield return attacker.MyReactToSpendPowerBundle(
+                    usablePower,
+                    [defender],
+                    attacker,
+                    powerRogueCunningStrike.Name,
+                    reactionValidated: ReactionValidated,
+                    reactionNotValidated: ReactionNotValidated,
+                    battleManager: battleManager);
+
+                if (aborted)
+                {
+                    break;
+                }
+            }
 
             yield break;
 
@@ -2817,6 +2897,11 @@ internal static class Tabletop2024Context
                     _selectedPower.CostPerUse,
                     0,
                     0);
+            }
+
+            void ReactionNotValidated(ReactionRequestSpendBundlePower reactionRequest)
+            {
+                aborted = true;
             }
         }
 
@@ -2962,12 +3047,14 @@ internal static class Tabletop2024Context
     {
         Rogue.FeatureUnlocks.RemoveAll(x =>
             x.FeatureDefinition == _featureSetRogueCunningStrike ||
+            x.FeatureDefinition == _featureRogueImprovedCunningStrike ||
             x.FeatureDefinition == _featureSetRogueDeviousStrike);
 
         if (Main.Settings.EnableRogueCunningStrike)
         {
             Rogue.FeatureUnlocks.AddRange(
                 new FeatureUnlockByLevel(_featureSetRogueCunningStrike, 5),
+                new FeatureUnlockByLevel(_featureRogueImprovedCunningStrike, 11),
                 new FeatureUnlockByLevel(_featureSetRogueDeviousStrike, 14));
         }
 
