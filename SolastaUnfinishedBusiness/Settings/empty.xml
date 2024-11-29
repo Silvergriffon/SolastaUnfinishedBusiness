@@ -2,7 +2,7 @@
 <Settings>
     <DisplayModMessage>1</DisplayModMessage>
     <EnableDiagsDump>0</EnableDiagsDump>
-    <SelectedTab>0</SelectedTab>
+    <SelectedTab>3</SelectedTab>
     <DisplayMultiplayerToggle>false</DisplayMultiplayerToggle>
     <DisplayOneDndToggle>false</DisplayOneDndToggle>
     <DisplayTabletopToggle>false</DisplayTabletopToggle>
@@ -220,9 +220,9 @@
     <KeepCharactersPanelOpenAndHeroSelectedAfterLevelUp>true</KeepCharactersPanelOpenAndHeroSelectedAfterLevelUp>
     <DisableStreamlinedMultiLevelUp>true</DisableStreamlinedMultiLevelUp>
     <EnablePcgRandom>false</EnablePcgRandom>
-    <EnableCustomPortraits>false</EnableCustomPortraits>
+    <EnableCustomPortraits>true</EnableCustomPortraits>
     <DisableMultilineSpellOffering>false</DisableMultilineSpellOffering>
-    <DisableUnofficialTranslations>false</DisableUnofficialTranslations>
+    <DisableUnofficialTranslations>true</DisableUnofficialTranslations>
     <EnableEpicPointsAndArray>false</EnableEpicPointsAndArray>
     <EnableLevel20>false</EnableLevel20>
     <EnableMulticlass>false</EnableMulticlass>
@@ -674,14 +674,16 @@
     <ShowChannelDivinityOnPortrait>false</ShowChannelDivinityOnPortrait>
     <EnableRogueCunningStrike>false</EnableRogueCunningStrike>
     <EnableRogueFightingStyle>false</EnableRogueFightingStyle>
+    <EnableRogueReliableTalentAt7>false</EnableRogueReliableTalentAt7>
     <EnableRogueSlipperyMind>false</EnableRogueSlipperyMind>
     <EnableRogueSteadyAim>false</EnableRogueSteadyAim>
     <RemoveRogueBlindSense>false</RemoveRogueBlindSense>
-    <EnableSorcererInnateSorceryAt1>false</EnableSorcererInnateSorceryAt1>
+    <EnableSorcererArcaneApotheosis>false</EnableSorcererArcaneApotheosis>
+    <EnableSorcererInnateSorceryAndSorceryIncarnate>false</EnableSorcererInnateSorceryAndSorceryIncarnate>
     <EnableSorcererMagicalGuidance>false</EnableSorcererMagicalGuidance>
     <EnableSorcererQuickenedAction>false</EnableSorcererQuickenedAction>
     <HideQuickenedActionWhenMetamagicOff>false</HideQuickenedActionWhenMetamagicOff>
-    <EnableSorcerousRestorationAtLevel5>false</EnableSorcerousRestorationAtLevel5>
+    <EnableSorcererSorcerousRestoration>false</EnableSorcererSorcerousRestoration>
     <EnableWarlockToUseOneDndInvocationProgression>false</EnableWarlockToUseOneDndInvocationProgression>
     <EnableWarlockMagicalCunningAtLevel2AndImprovedEldritchMasterAt20>false
     </EnableWarlockMagicalCunningAtLevel2AndImprovedEldritchMasterAt20>
