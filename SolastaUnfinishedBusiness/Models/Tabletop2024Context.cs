@@ -337,6 +337,7 @@ internal static class Tabletop2024Context
     private static readonly ConditionDefinition ConditionStudiedAttacks = ConditionDefinitionBuilder
         .Create("ConditionStudiedAttacks")
         .SetGuiPresentation(Category.Condition, ConditionMarkedByHunter)
+        .AddCustomSubFeatures(new PhysicalAttackFinishedOnMeStudiedAttacks())
         .SetPossessive()
         .AddToDB();
 
@@ -344,15 +345,15 @@ internal static class Tabletop2024Context
         FeatureDefinitionCombatAffinityBuilder
             .Create("CombatAffinityStudiedAttacks")
             .SetGuiPresentation("Condition/&ConditionStudiedAttacksTitle", Gui.NoLocalization)
-            .SetSituationalContext((SituationalContext)ExtraSituationalContext.IsConditionSource,
-                ConditionStudiedAttacks)
+            .SetSituationalContext(
+                (SituationalContext)ExtraSituationalContext.IsConditionSource, ConditionStudiedAttacks)
             .SetAttackOnMeAdvantage(AdvantageType.Advantage)
             .AddToDB();
 
     private static readonly FeatureDefinition FeatureFighterStudiedAttacks = FeatureDefinitionBuilder
         .Create("FeatureFighterStudiedAttacks")
         .SetGuiPresentation(Category.Feature)
-        .AddCustomSubFeatures(new PhysicalAttackFinishedByMeStudiedAttacks(ConditionStudiedAttacks))
+        .AddCustomSubFeatures(new PhysicalAttackFinishedByMeStudiedAttacks())
         .AddToDB();
 
     internal static void LateLoad()
@@ -1330,10 +1331,11 @@ internal static class Tabletop2024Context
     {
         var character = GameLocationCharacter.GetFromActor(rulesetCharacter);
 
-        return IsArcaneApotheosisValid(character, rulesetEffect);
+        return IsArcaneApotheosisValid(character, rulesetEffect, false);
     }
 
-    private static bool IsArcaneApotheosisValid(GameLocationCharacter character, RulesetEffect rulesetEffect)
+    private static bool IsArcaneApotheosisValid(
+        GameLocationCharacter character, RulesetEffect rulesetEffect, bool validateMetamagicOption = true)
     {
         if (!Main.Settings.EnableSorcererArcaneApotheosis)
         {
@@ -1346,7 +1348,7 @@ internal static class Tabletop2024Context
         }
 
         // ReSharper disable once ConvertIfStatementToReturnStatement
-        if (!rulesetEffectSpell.MetamagicOption)
+        if (validateMetamagicOption && !rulesetEffectSpell.MetamagicOption)
         {
             return false;
         }
@@ -1519,7 +1521,7 @@ internal static class Tabletop2024Context
             var rulesetAttacker = attacker.RulesetCharacter;
 
             rulesetAttacker.InflictCondition(
-                RuleDefinitions.ConditionDisengaging,
+                ConditionArcaneApotheosis.Name,
                 DurationType.Round,
                 0,
                 TurnOccurenceType.EndOfTurn,
@@ -1527,7 +1529,7 @@ internal static class Tabletop2024Context
                 rulesetAttacker.Guid,
                 rulesetAttacker.CurrentFaction.Name,
                 1,
-                RuleDefinitions.ConditionDisengaging,
+                ConditionArcaneApotheosis.Name,
                 rulesetAttacker.UsedSorceryPoints,
                 0,
                 0);
@@ -1631,7 +1633,7 @@ internal static class Tabletop2024Context
             attacker.UsedTacticalMovesChanged?.Invoke(attacker);
 
             rulesetAttacker.InflictCondition(
-                RuleDefinitions.ConditionDisengaging,
+                ConditionWithdrawn.Name,
                 DurationType.Round,
                 0,
                 TurnOccurenceType.EndOfTurn,
@@ -1640,7 +1642,7 @@ internal static class Tabletop2024Context
                 rulesetAttacker.Guid,
                 rulesetAttacker.CurrentFaction.Name,
                 1,
-                RuleDefinitions.ConditionDisengaging,
+                ConditionWithdrawn.Name,
                 0,
                 0,
                 0);
@@ -1650,8 +1652,38 @@ internal static class Tabletop2024Context
         }
     }
 
-    private sealed class PhysicalAttackFinishedByMeStudiedAttacks(ConditionDefinition conditionStudiedAttacks)
-        : IPhysicalAttackFinishedByMe
+    private sealed class PhysicalAttackFinishedOnMeStudiedAttacks : IPhysicalAttackFinishedOnMe
+    {
+        public IEnumerator OnPhysicalAttackFinishedOnMe(
+            GameLocationBattleManager battleManager,
+            CharacterAction action,
+            GameLocationCharacter attacker,
+            GameLocationCharacter defender,
+            RulesetAttackMode attackMode,
+            RollOutcome rollOutcome,
+            int damageAmount)
+        {
+            var rulesetDefender = defender.RulesetActor;
+
+            if (!rulesetDefender.TryGetConditionOfCategoryAndType(
+                    AttributeDefinitions.TagEffect, ConditionStudiedAttacks.Name, out var activeCondition) ||
+                activeCondition.SourceGuid != attacker.Guid)
+            {
+                yield break;
+            }
+
+            if (activeCondition.Amount < 0)
+            {
+                rulesetDefender.RemoveCondition(activeCondition);
+            }
+            else
+            {
+                activeCondition.amount = -1;
+            }
+        }
+    }
+
+    private sealed class PhysicalAttackFinishedByMeStudiedAttacks : IPhysicalAttackFinishedByMe
     {
         public IEnumerator OnPhysicalAttackFinishedByMe(
             GameLocationBattleManager battleManager,
@@ -1671,7 +1703,7 @@ internal static class Tabletop2024Context
             var rulesetDefender = defender.RulesetActor;
 
             rulesetDefender.InflictCondition(
-                conditionStudiedAttacks.Name,
+                ConditionStudiedAttacks.Name,
                 DurationType.Round,
                 0,
                 TurnOccurenceType.EndOfSourceTurn,
@@ -1679,7 +1711,7 @@ internal static class Tabletop2024Context
                 rulesetAttacker.Guid,
                 rulesetAttacker.CurrentFaction.Name,
                 1,
-                conditionStudiedAttacks.Name,
+                ConditionStudiedAttacks.Name,
                 0,
                 0,
                 0);
@@ -3148,6 +3180,13 @@ internal static class Tabletop2024Context
         };
     }
 
+    private static readonly ConditionDefinition ConditionWithdrawn = ConditionDefinitionBuilder
+        .Create(ConditionDefinitions.ConditionDisengaging, "ConditionWithdrawn")
+        .SetParentCondition(ConditionDefinitions.ConditionDisengaging)
+        .SetFeatures()
+        .AddCustomSubFeatures(new ActionFinishedByWithdraw())
+        .AddToDB();
+
     private sealed class CustomBehaviorCunningStrike(
         FeatureDefinitionPower powerRogueCunningStrike,
         FeatureDefinitionPower powerKnockOut,
@@ -3298,7 +3337,7 @@ internal static class Tabletop2024Context
             attacker.UsedTacticalMovesChanged?.Invoke(attacker);
 
             rulesetAttacker.InflictCondition(
-                RuleDefinitions.ConditionDisengaging,
+                ConditionWithdrawn.Name,
                 DurationType.Round,
                 0,
                 TurnOccurenceType.EndOfTurn,
@@ -3307,7 +3346,7 @@ internal static class Tabletop2024Context
                 rulesetAttacker.Guid,
                 rulesetAttacker.CurrentFaction.Name,
                 1,
-                RuleDefinitions.ConditionDisengaging,
+                ConditionWithdrawn.Name,
                 0,
                 0,
                 0);
@@ -3393,6 +3432,25 @@ internal static class Tabletop2024Context
                 {
                     yield return null;
                 }
+            }
+        }
+    }
+
+    private sealed class ActionFinishedByWithdraw : IActionFinishedByMe
+    {
+        public IEnumerator OnActionFinishedByMe(CharacterAction action)
+        {
+            if (action is not (CharacterActionMove or CharacterActionDash))
+            {
+                yield break;
+            }
+
+            var rulesetCharacter = action.ActingCharacter.RulesetCharacter;
+
+            if (rulesetCharacter.TryGetConditionOfCategoryAndType(
+                    AttributeDefinitions.TagCombat, ConditionWithdrawn.Name, out var activeCondition))
+            {
+                rulesetCharacter.RemoveCondition(activeCondition);
             }
         }
     }
