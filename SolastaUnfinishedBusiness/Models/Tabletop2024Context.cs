@@ -337,6 +337,7 @@ internal static class Tabletop2024Context
     private static readonly ConditionDefinition ConditionStudiedAttacks = ConditionDefinitionBuilder
         .Create("ConditionStudiedAttacks")
         .SetGuiPresentation(Category.Condition, ConditionMarkedByHunter)
+        .SetConditionType(ConditionType.Detrimental)
         .AddCustomSubFeatures(new PhysicalAttackFinishedOnMeStudiedAttacks())
         .SetPossessive()
         .AddToDB();
@@ -356,7 +357,7 @@ internal static class Tabletop2024Context
         .AddCustomSubFeatures(new PhysicalAttackFinishedByMeStudiedAttacks())
         .AddToDB();
 
-    private static readonly FeatureDefinition FeatureMemorizeSpell = FeatureDefinitionBuilder
+    internal static readonly FeatureDefinition FeatureMemorizeSpell = FeatureDefinitionBuilder
         .Create("FeatureWizardMemorizeSpell")
         .SetGuiPresentation(Category.Feature)
         .AddToDB();
@@ -370,6 +371,13 @@ internal static class Tabletop2024Context
             RestActivityDefinition.ActivityCondition.CanPrepareSpells,
             nameof(FunctorMemorizeSpell),
             string.Empty)
+        .AddToDB();
+
+    private static readonly ConditionDefinition ConditionMemorizeSpell = ConditionDefinitionBuilder
+        .Create("ConditionMemorizeSpell")
+        .SetGuiPresentationNoContent(true)
+        .SetSilent(Silent.WhenAddedOrRemoved)
+        .SetFixedAmount(1)
         .AddToDB();
 
     internal static void LateLoad()
@@ -1338,22 +1346,41 @@ internal static class Tabletop2024Context
                (Main.Settings.EnableWizardMemorizeSpell && hero.GetClassLevel(Wizard) >= 5);
     }
 
-    internal static bool IsMemorizeSpellPreparation(RulesetCharacter rulesetCharacter, out int maxPreparedSpell)
+    internal static bool IsMemorizeSpellPreparation(RulesetCharacter rulesetCharacter)
     {
-        maxPreparedSpell = 1;
-
         return rulesetCharacter.HasConditionOfCategoryAndType(
-            AttributeDefinitions.TagEffect, "ConditionMemorizeSpell");
+            AttributeDefinitions.TagEffect, ConditionMemorizeSpell.Name);
+    }
+
+    internal static bool IsInvalidMemorizeSelectedSpell(
+        SpellRepertoirePanel spellRepertoirePanel, RulesetCharacter rulesetCharacter, SpellDefinition spell)
+    {
+        var spellIndex = SpellsContext.Spells.IndexOf(spell);
+        var isUncheck = spellRepertoirePanel.preparedSpells.Contains(spell);
+        var maxPreparedSpells = spellRepertoirePanel.SpellRepertoire.MaxPreparedSpell;
+        var currentPreparedSpells = spellRepertoirePanel.preparedSpells.Count;
+        var isInvalid =
+            rulesetCharacter.TryGetConditionOfCategoryAndType(
+                AttributeDefinitions.TagEffect, ConditionMemorizeSpell.Name, out var activeCondition) &&
+            maxPreparedSpells - currentPreparedSpells >= activeCondition.Amount &&
+            spellIndex != activeCondition.SourceAbilityBonus;
+
+        if (isUncheck)
+        {
+            // can only unselect a spell once
+            activeCondition.Amount = 0;
+        }
+        else
+        {
+            // keep a tab on unselected spell
+            activeCondition.SourceAbilityBonus = spellIndex;
+        }
+
+        return isInvalid && isUncheck;
     }
 
     private static void LoadWizardMemorizeSpell()
     {
-        _ = ConditionDefinitionBuilder
-            .Create("ConditionMemorizeSpell")
-            .SetGuiPresentationNoContent(true)
-            .SetSilent(Silent.WhenAddedOrRemoved)
-            .AddToDB();
-
         ServiceRepository.GetService<IFunctorService>()
             .RegisterFunctor(nameof(FunctorMemorizeSpell), new FunctorMemorizeSpell());
     }
@@ -1393,20 +1420,13 @@ internal static class Tabletop2024Context
     }
 
     private static bool IsArcaneApotheosisValid(
-        GameLocationCharacter character, RulesetEffect rulesetEffect, bool validateMetamagicOption = true)
+        GameLocationCharacter character,
+        RulesetEffect rulesetEffect,
+        bool validateMetamagicOption = true)
     {
-        if (!Main.Settings.EnableSorcererArcaneApotheosis)
-        {
-            return false;
-        }
-
-        if (rulesetEffect is not RulesetEffectSpell rulesetEffectSpell)
-        {
-            return false;
-        }
-
-        // ReSharper disable once ConvertIfStatementToReturnStatement
-        if (validateMetamagicOption && !rulesetEffectSpell.MetamagicOption)
+        if (!Main.Settings.EnableSorcererArcaneApotheosis ||
+            rulesetEffect is not RulesetEffectSpell rulesetEffectSpell ||
+            (validateMetamagicOption && !rulesetEffectSpell.MetamagicOption))
         {
             return false;
         }
@@ -1414,10 +1434,19 @@ internal static class Tabletop2024Context
         var rulesetCharacter = character.RulesetCharacter;
         var sorcererLevel = rulesetCharacter.GetClassLevel(Sorcerer);
 
-        return sorcererLevel == 20 &&
-               character.OnceInMyTurnIsValid(FeatureSorcererArcaneApotheosis.Name) &&
-               rulesetCharacter.HasConditionOfCategoryAndType(
-                   AttributeDefinitions.TagEffect, ConditionSorcererInnateSorcery.Name);
+        if (sorcererLevel < 20)
+        {
+            return false;
+        }
+
+        if (Gui.Battle != null &&
+            !character.OnceInMyTurnIsValid(FeatureSorcererArcaneApotheosis.Name))
+        {
+            return false;
+        }
+
+        return rulesetCharacter.HasConditionOfCategoryAndType(
+            AttributeDefinitions.TagEffect, ConditionSorcererInnateSorcery.Name);
     }
 
     internal static void SwitchSorcererInnateSorcery()
@@ -1556,22 +1585,23 @@ internal static class Tabletop2024Context
                 yield break;
             }
 
-            var activeCondition = hero.InflictCondition(
-                "ConditionMemorizeSpell",
-                DurationType.Permanent,
+            // make this until any rest to ensure users cannot cheat by reopening the prep screen
+            // as conditions on refresh won't update source amount nor source ability bonus used for tracking
+            hero.InflictCondition(
+                ConditionMemorizeSpell.Name,
+                DurationType.UntilAnyRest,
                 0,
-                TurnOccurenceType.StartOfTurn,
+                TurnOccurenceType.EndOfTurn,
                 AttributeDefinitions.TagEffect,
                 hero.guid,
                 hero.CurrentFaction.Name,
                 1,
-                "ConditionMemorizeSpell",
-                0,
-                0,
+                ConditionMemorizeSpell.Name,
+                1, // how many spells can be prepared
+                -1, // index to the unselected spell
                 0);
 
             partyStatusScreen.SetupDisplayPreferences(false, false, false);
-
             inspectionScreen.ShowSpellPreparation(
                 functorParameters.RestingHero, Gui.GuiService.GetScreen<RestModal>(), spellRepertoire);
 
@@ -1581,7 +1611,6 @@ internal static class Tabletop2024Context
             }
 
             partyStatusScreen.SetupDisplayPreferences(true, true, true);
-            hero.RemoveCondition(activeCondition);
         }
     }
 
@@ -1598,7 +1627,6 @@ internal static class Tabletop2024Context
             }
 
             attacker.SetSpecialFeatureUses(FeatureSorcererArcaneApotheosis.Name, 0);
-
 
             var rulesetCharacter = attacker.RulesetCharacter;
 
@@ -1656,13 +1684,9 @@ internal static class Tabletop2024Context
 
             if (abilityCheckData.AbilityCheckRoll == 0 ||
                 abilityCheckData.AbilityCheckRollOutcome != RollOutcome.Failure ||
+                abilityCheckData.AbilityCheckSuccessDelta < -10 ||
                 helper != defender ||
                 rulesetHelper.GetRemainingUsesOfPower(usablePower) == 0)
-            {
-                yield break;
-            }
-
-            if (abilityCheckData.AbilityCheckSuccessDelta < -10)
             {
                 yield break;
             }
@@ -1728,9 +1752,9 @@ internal static class Tabletop2024Context
             }
 
             var rulesetAttacker = attacker.RulesetCharacter;
-            var distance = int3.Distance(attacker.LocationPosition, position);
+            var distance = (int)int3.Distance(attacker.LocationPosition, position);
 
-            attacker.UsedTacticalMoves -= (int)distance;
+            attacker.UsedTacticalMoves -= distance;
 
             if (attacker.UsedTacticalMoves < 0)
             {
@@ -1750,7 +1774,7 @@ internal static class Tabletop2024Context
                 rulesetAttacker.CurrentFaction.Name,
                 1,
                 ConditionWithdrawn.Name,
-                0,
+                distance,
                 0,
                 0);
 
@@ -1772,21 +1796,15 @@ internal static class Tabletop2024Context
         {
             var rulesetDefender = defender.RulesetActor;
 
-            if (!rulesetDefender.TryGetConditionOfCategoryAndType(
-                    AttributeDefinitions.TagEffect, ConditionStudiedAttacks.Name, out var activeCondition) ||
-                activeCondition.SourceGuid != attacker.Guid)
-            {
-                yield break;
-            }
-
-            if (activeCondition.Amount < 0)
+            if (rulesetDefender.TryGetConditionOfCategoryAndType(
+                    AttributeDefinitions.TagEffect, ConditionStudiedAttacks.Name, out var activeCondition) &&
+                activeCondition.SourceGuid == attacker.Guid &&
+                rollOutcome is RollOutcome.Success or RollOutcome.CriticalSuccess)
             {
                 rulesetDefender.RemoveCondition(activeCondition);
             }
-            else
-            {
-                activeCondition.amount = -1;
-            }
+
+            yield break;
         }
     }
 
@@ -1812,7 +1830,7 @@ internal static class Tabletop2024Context
             rulesetDefender.InflictCondition(
                 ConditionStudiedAttacks.Name,
                 DurationType.Round,
-                0,
+                1,
                 TurnOccurenceType.EndOfSourceTurn,
                 AttributeDefinitions.TagEffect,
                 rulesetAttacker.Guid,
@@ -3289,8 +3307,10 @@ internal static class Tabletop2024Context
 
     private static readonly ConditionDefinition ConditionWithdrawn = ConditionDefinitionBuilder
         .Create(ConditionDefinitions.ConditionDisengaging, "ConditionWithdrawn")
+        .SetSilent(Silent.None)
         .SetParentCondition(ConditionDefinitions.ConditionDisengaging)
         .SetFeatures()
+        .SetFixedAmount(3)
         .AddCustomSubFeatures(new ActionFinishedByWithdraw())
         .AddToDB();
 
@@ -3415,7 +3435,7 @@ internal static class Tabletop2024Context
             {
                 if (selectedPower == powerKnockOut)
                 {
-                    HandleKnockOut(attacker, defender);
+                    yield return HandleKnockOut(attacker, defender);
                 }
                 else if (selectedPower == powerWithdraw)
                 {
@@ -3432,9 +3452,9 @@ internal static class Tabletop2024Context
 
             var rulesetAttacker = attacker.RulesetCharacter;
             var position = action.ActionParams.Positions[0];
-            var distance = int3.Distance(attacker.LocationPosition, position);
+            var distance = (int)int3.Distance(attacker.LocationPosition, position);
 
-            attacker.UsedTacticalMoves -= (int)distance;
+            attacker.UsedTacticalMoves -= distance;
 
             if (attacker.UsedTacticalMoves < 0)
             {
@@ -3454,7 +3474,7 @@ internal static class Tabletop2024Context
                 rulesetAttacker.CurrentFaction.Name,
                 1,
                 ConditionWithdrawn.Name,
-                0,
+                distance,
                 0,
                 0);
 
@@ -3462,13 +3482,13 @@ internal static class Tabletop2024Context
             attacker.MyExecuteActionTacticalMove(position);
         }
 
-        private void HandleKnockOut(GameLocationCharacter attacker, GameLocationCharacter defender)
+        private IEnumerator HandleKnockOut(GameLocationCharacter attacker, GameLocationCharacter defender)
         {
             var rulesetDefender = defender.RulesetActor;
 
             if (rulesetDefender is not { IsDeadOrDyingOrUnconscious: false })
             {
-                return;
+                yield break;
             }
 
             var rulesetAttacker = attacker.RulesetCharacter;
@@ -3547,15 +3567,22 @@ internal static class Tabletop2024Context
     {
         public IEnumerator OnActionFinishedByMe(CharacterAction action)
         {
-            if (action is not (CharacterActionMove or CharacterActionDash))
+            if (action is not (CharacterActionMove or CharacterActionMoveStepWalk))
             {
                 yield break;
             }
 
             var rulesetCharacter = action.ActingCharacter.RulesetCharacter;
 
-            if (rulesetCharacter.TryGetConditionOfCategoryAndType(
+            if (!rulesetCharacter.TryGetConditionOfCategoryAndType(
                     AttributeDefinitions.TagCombat, ConditionWithdrawn.Name, out var activeCondition))
+            {
+                yield break;
+            }
+
+            activeCondition.Amount--;
+
+            if (activeCondition.Amount <= 0)
             {
                 rulesetCharacter.RemoveCondition(activeCondition);
             }
