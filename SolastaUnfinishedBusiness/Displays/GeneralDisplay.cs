@@ -155,6 +155,9 @@ internal static class ToolsDisplay
         }
 
         //Playhouse
+        UI.Label();
+        UI.Label("Playhouse");
+        UI.Label();
         toggle = Main.Settings.DisableTorsoDefaultVisuals;
         if (UI.Toggle(Gui.Localize("ModUi/&DisableTorsoDefaultVisuals"), ref toggle, UI.AutoWidth()))
         {
@@ -162,6 +165,7 @@ internal static class ToolsDisplay
             Playhouse.SwitchTorsoNoDefaultVisual();
         }
 
+        UI.Label("End Playhouse");
         UI.Label();
 
         toggle = Main.Settings.DisableMultilineSpellOffering;
