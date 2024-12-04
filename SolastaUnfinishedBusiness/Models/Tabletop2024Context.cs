@@ -1794,9 +1794,16 @@ internal static class Tabletop2024Context
                 yield break;
             }
 
+            var attacker = action.ActingCharacter;
+            var rulesetAttacker = attacker.RulesetCharacter;
+
+            if (rulesetAttacker.GetClassLevel(Fighter) < 5)
+            {
+                yield break;
+            }
+
             yield return CampaignsContext.SelectPosition(action, powerDummyTargeting);
 
-            var attacker = action.ActingCharacter;
             var position = action.ActionParams.Positions[0];
 
             if (attacker.LocationPosition == position)
@@ -1804,7 +1811,6 @@ internal static class Tabletop2024Context
                 yield break;
             }
 
-            var rulesetAttacker = attacker.RulesetCharacter;
             var distance = (int)int3.Distance(attacker.LocationPosition, position);
 
             attacker.UsedTacticalMoves -= distance;
@@ -1827,7 +1833,7 @@ internal static class Tabletop2024Context
                 rulesetAttacker.CurrentFaction.Name,
                 1,
                 ConditionWithdrawn.Name,
-                distance,
+                0,
                 0,
                 0);
 
@@ -3363,7 +3369,6 @@ internal static class Tabletop2024Context
         .SetSilent(Silent.None)
         .SetParentCondition(ConditionDefinitions.ConditionDisengaging)
         .SetFeatures()
-        .SetFixedAmount(3)
         .AddCustomSubFeatures(new ActionFinishedByWithdraw())
         .AddToDB();
 
@@ -3527,7 +3532,7 @@ internal static class Tabletop2024Context
                 rulesetAttacker.CurrentFaction.Name,
                 1,
                 ConditionWithdrawn.Name,
-                distance,
+                0,
                 0,
                 0);
 
@@ -3620,12 +3625,14 @@ internal static class Tabletop2024Context
     {
         public IEnumerator OnActionFinishedByMe(CharacterAction action)
         {
-            if (action is not (CharacterActionMove or CharacterActionMoveStepWalk))
+            var actingCharacter = action.ActingCharacter;
+
+            if (action is not CharacterActionMoveStepBase || actingCharacter.MovingToDestination)
             {
                 yield break;
             }
 
-            var rulesetCharacter = action.ActingCharacter.RulesetCharacter;
+            var rulesetCharacter = actingCharacter.RulesetCharacter;
 
             if (!rulesetCharacter.TryGetConditionOfCategoryAndType(
                     AttributeDefinitions.TagCombat, ConditionWithdrawn.Name, out var activeCondition))
@@ -3633,12 +3640,7 @@ internal static class Tabletop2024Context
                 yield break;
             }
 
-            activeCondition.Amount--;
-
-            if (activeCondition.Amount <= 0)
-            {
-                rulesetCharacter.RemoveCondition(activeCondition);
-            }
+            rulesetCharacter.RemoveCondition(activeCondition);
         }
     }
 
