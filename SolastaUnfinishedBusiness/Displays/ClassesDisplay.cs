@@ -83,19 +83,7 @@ internal static class ClassesDisplay
         if (UI.Toggle(Gui.Localize("ModUi/&EnableBarbarianBrutalStrike"), ref toggle, UI.AutoWidth()))
         {
             Main.Settings.EnableBarbarianBrutalStrike = toggle;
-            Main.Settings.DisableBarbarianBrutalCritical = toggle;
             Tabletop2024Context.SwitchBarbarianBrutalStrike();
-            Tabletop2024Context.SwitchBarbarianBrutalCritical();
-        }
-
-        if (Main.Settings.EnableBarbarianBrutalStrike)
-        {
-            toggle = Main.Settings.DisableBarbarianBrutalCritical;
-            if (UI.Toggle(Gui.Localize("ModUi/&DisableBarbarianBrutalCritical"), ref toggle, UI.AutoWidth()))
-            {
-                Main.Settings.DisableBarbarianBrutalCritical = toggle;
-                Tabletop2024Context.SwitchBarbarianBrutalCritical();
-            }
         }
 
         toggle = Main.Settings.EnableBarbarianFightingStyle;
@@ -103,6 +91,13 @@ internal static class ClassesDisplay
         {
             Main.Settings.EnableBarbarianFightingStyle = toggle;
             ClassesContext.SwitchBarbarianFightingStyle();
+        }
+
+        toggle = Main.Settings.EnableBarbarianInstinctivePounce;
+        if (UI.Toggle(Gui.Localize("ModUi/&EnableBarbarianInstinctivePounce"), ref toggle, UI.AutoWidth()))
+        {
+            Main.Settings.EnableBarbarianInstinctivePounce = toggle;
+            Tabletop2024Context.SwitchBarbarianInstinctivePounce();
         }
 
         toggle = Main.Settings.EnableBarbarianRecklessSameBuffDebuffDuration;
@@ -117,6 +112,20 @@ internal static class ClassesDisplay
         {
             Main.Settings.EnableBarbarianRegainOneRageAtShortRest = toggle;
             Tabletop2024Context.SwitchBarbarianRegainOneRageAtShortRest();
+        }
+
+        toggle = Main.Settings.EnableBarbarianPersistentRage;
+        if (UI.Toggle(Gui.Localize("ModUi/&EnableBarbarianPersistentRage"), ref toggle, UI.AutoWidth()))
+        {
+            Main.Settings.EnableBarbarianPersistentRage = toggle;
+            Tabletop2024Context.SwitchBarbarianPersistentRage();
+        }
+
+        toggle = Main.Settings.EnableBarbarianRelentlessRage;
+        if (UI.Toggle(Gui.Localize("ModUi/&EnableBarbarianRelentlessRage"), ref toggle, UI.AutoWidth()))
+        {
+            Main.Settings.EnableBarbarianRelentlessRage = toggle;
+            Tabletop2024Context.SwitchBarbarianRelentlessRage();
         }
 
         UI.Label();

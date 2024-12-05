@@ -16,7 +16,7 @@ namespace SolastaUnfinishedBusiness.Behaviors.Specific;
 internal static class GLBM
 {
     // ReSharper disable once InconsistentNaming
-    private static int ComputeSavingThrowDC(IControllableCharacter glc, IAdditionalDamageProvider provider)
+    private static int ComputeSavingThrowDC(GameLocationCharacter glc, IAdditionalDamageProvider provider)
     {
         var character = glc.RulesetCharacter;
 
@@ -1062,7 +1062,7 @@ internal static class GLBM
                             validTrigger = reactionParams.ReactionValidated;
 
                             // One DnD only allow smites as bonus action
-                            if (Main.Settings.EnablePaladinSmiteAsBonusAction && validTrigger)
+                            if (Main.Settings.EnablePaladinSmiteAsBonusAction && isDivineSmite && validTrigger)
                             {
                                 attacker.SpendActionType(ActionDefinitions.ActionType.Bonus);
                             }

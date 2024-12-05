@@ -54,14 +54,14 @@ internal static class Tabletop2024Context
             .AddToDB();
 
     private static readonly FeatureDefinitionActionAffinity ActionAffinityPoisonBonusAction =
-    FeatureDefinitionActionAffinityBuilder
-        .Create("ActionAffinityPoisonBonusAction")
-        .SetGuiPresentationNoContent(true)
-        .AddCustomSubFeatures(
-            new ValidateDeviceFunctionUse((_, device, _) =>
-                device.UsableDeviceDescription.UsableDeviceTags.Contains("Poison")))
-        .SetAuthorizedActions(Id.UseItemBonus)
-        .AddToDB();
+        FeatureDefinitionActionAffinityBuilder
+            .Create("ActionAffinityPoisonBonusAction")
+            .SetGuiPresentationNoContent(true)
+            .AddCustomSubFeatures(
+                new ValidateDeviceFunctionUse((_, device, _) =>
+                    device.UsableDeviceDescription.UsableDeviceTags.Contains("Poison")))
+            .SetAuthorizedActions(Id.UseItemBonus)
+            .AddToDB();
 
     private static readonly ItemPropertyDescription ItemPropertyPotionBonusAction =
         new(RingFeatherFalling.StaticProperties[0])
@@ -74,14 +74,14 @@ internal static class Tabletop2024Context
         };
 
     private static readonly ItemPropertyDescription ItemPropertyPoisonBonusAction =
-    new(RingFeatherFalling.StaticProperties[0])
-    {
-        appliesOnItemOnly = false,
-        type = ItemPropertyDescription.PropertyType.Feature,
-        featureDefinition = ActionAffinityPoisonBonusAction,
-        conditionDefinition = null,
-        knowledgeAffinity = EquipmentDefinitions.KnowledgeAffinity.ActiveAndHidden
-    };
+        new(RingFeatherFalling.StaticProperties[0])
+        {
+            appliesOnItemOnly = false,
+            type = ItemPropertyDescription.PropertyType.Feature,
+            featureDefinition = ActionAffinityPoisonBonusAction,
+            conditionDefinition = null,
+            knowledgeAffinity = EquipmentDefinitions.KnowledgeAffinity.ActiveAndHidden
+        };
 
     private static readonly FeatureDefinitionCombatAffinity CombatAffinityConditionSurprised =
         FeatureDefinitionCombatAffinityBuilder
@@ -402,6 +402,8 @@ internal static class Tabletop2024Context
         BuildBarbarianBrutalStrike();
         BuildOneDndGuidanceSubspells();
         BuildRogueCunningStrike();
+        LoadBarbarianInstinctivePounce();
+        LoadBarbarianPersistentRage();
         LoadFighterTacticalShiftCustomBehavior();
         LoadFighterStudiedAttacks();
         LoadMonkHeightenedMetabolism();
@@ -411,10 +413,12 @@ internal static class Tabletop2024Context
         LoadOneDndTrueStrike();
         LoadSorcerousRestorationAtLevel5();
         LoadWizardMemorizeSpell();
-        SwitchBarbarianBrutalCritical();
         SwitchBarbarianBrutalStrike();
+        SwitchBarbarianInstinctivePounce();
+        SwitchBarbarianPersistentRage();
         SwitchBarbarianRecklessSameBuffDebuffDuration();
         SwitchBarbarianRegainOneRageAtShortRest();
+        SwitchBarbarianRelentlessRage();
         SwitchDruidPrimalOrderAndRemoveMediumArmorProficiency();
         SwitchDruidWeaponProficiencyToUseOneDnd();
         SwitchSpellRitualOnAllCasters();
@@ -497,7 +501,7 @@ internal static class Tabletop2024Context
                     .SetDurationData(DurationType.Round)
                     .SetTargetingData(Side.Ally, RangeType.Distance, 12, TargetType.Position)
                     .Build())
-            .AddCustomSubFeatures(ModifyPowerVisibility.Hidden, new CustomBehaviorWithdraw())
+            .AddCustomSubFeatures(ModifyPowerVisibility.Hidden, new CustomBehaviorFilterTargetingPositionHalfMove())
             .AddToDB();
 
         PowerFighterSecondWind.AddCustomSubFeatures(
@@ -1748,7 +1752,7 @@ internal static class Tabletop2024Context
                 ExtraActionId.DoNothingFree,
                 defender,
                 "TacticalMindCheck",
-                "CustomReactionTacticalMindCheckDescription".Formatted(Category.Reaction),
+                "CustomReactionTacticalMindCheckDescription".Localized(Category.Reaction),
                 ReactionValidated,
                 battleManager: battleManager);
 
@@ -2168,6 +2172,43 @@ internal static class Tabletop2024Context
             }
 
             attackModifier.AttackAdvantageTrends.Add(_trendInfo);
+        }
+    }
+
+    private sealed class CustomBehaviorFilterTargetingPositionHalfMove : IFilterTargetingPosition,
+        IIgnoreInvisibilityInterruptionCheck
+    {
+        public IEnumerator ComputeValidPositions(CursorLocationSelectPosition cursorLocationSelectPosition)
+        {
+            cursorLocationSelectPosition.validPositionsCache.Clear();
+
+            var actingCharacter = cursorLocationSelectPosition.ActionParams.ActingCharacter;
+            var positioningService = ServiceRepository.GetService<IGameLocationPositioningService>();
+            var visibilityService = ServiceRepository.GetService<IGameLocationVisibilityService>();
+
+            var halfMaxTacticalMoves = (actingCharacter.MaxTacticalMoves + 1) / 2; // half-rounded up
+            var boxInt = new BoxInt(actingCharacter.LocationPosition, int3.zero, int3.zero);
+
+            boxInt.Inflate(halfMaxTacticalMoves, 0, halfMaxTacticalMoves);
+
+            foreach (var position in boxInt.EnumerateAllPositionsWithin())
+            {
+                if (!visibilityService.MyIsCellPerceivedByCharacter(position, actingCharacter) ||
+                    !positioningService.CanPlaceCharacter(
+                        actingCharacter, position, CellHelpers.PlacementMode.Station) ||
+                    !positioningService.CanCharacterStayAtPosition_Floor(
+                        actingCharacter, position, onlyCheckCellsWithRealGround: true))
+                {
+                    continue;
+                }
+
+                cursorLocationSelectPosition.validPositionsCache.Add(position);
+
+                if (cursorLocationSelectPosition.stopwatch.Elapsed.TotalMilliseconds > 0.5)
+                {
+                    yield return null;
+                }
+            }
         }
     }
 
@@ -2717,15 +2758,43 @@ internal static class Tabletop2024Context
                 0,
                 0);
 
+            var aborted = false;
+            var attempts = rulesetAttacker.GetClassLevel(Barbarian) >= 17 ? 2 : 1;
             var usablePower = PowerProvider.Get(powerBarbarianBrutalStrike, rulesetAttacker);
+            List<FeatureDefinitionPower> selectedPowers = [];
+            RulesetUsablePower savedUsablePower = null;
 
-            yield return attacker.MyReactToSpendPowerBundle(
-                usablePower,
-                [defender],
-                attacker,
-                powerBarbarianBrutalStrike.Name,
-                reactionValidated: ReactionValidated,
-                battleManager: battleManager);
+            for (var i = 0; i < attempts; i++)
+            {
+                yield return attacker.MyReactToSpendPowerBundle(
+                    usablePower,
+                    [defender],
+                    attacker,
+                    powerBarbarianBrutalStrike.Name,
+                    reactionValidated: ReactionValidated,
+                    reactionNotValidated: ReactionNotValidated,
+                    battleManager: battleManager);
+
+                if (aborted)
+                {
+                    break;
+                }
+
+                if (selectedPowers.Count > 1)
+                {
+                    continue;
+                }
+
+                // don't offer 1st selected effect again
+                savedUsablePower = PowerProvider.Get(selectedPowers[0], rulesetAttacker);
+                rulesetAttacker.UsablePowers.Remove(PowerProvider.Get(selectedPowers[0], rulesetAttacker));
+            }
+
+            // recover first selected usable power
+            if (savedUsablePower != null)
+            {
+                rulesetAttacker.UsablePowers.Add(savedUsablePower);
+            }
 
             yield break;
 
@@ -2741,6 +2810,8 @@ internal static class Tabletop2024Context
                 }
 
                 var selectedPower = subPowers[option];
+
+                selectedPowers.Add(selectedPower);
 
                 switch (selectedPower.Name)
                 {
@@ -2758,6 +2829,11 @@ internal static class Tabletop2024Context
                         InflictCondition(rulesetAttacker, defender.RulesetCharacter, _conditionSunderingBlow.Name);
                         break;
                 }
+            }
+
+            void ReactionNotValidated(ReactionRequestSpendBundlePower reactionRequest)
+            {
+                aborted = true;
             }
         }
 
@@ -2896,7 +2972,9 @@ internal static class Tabletop2024Context
         Barbarian.FeatureUnlocks.RemoveAll(x =>
             x.FeatureDefinition == _featureSetBarbarianBrutalStrike ||
             x.FeatureDefinition == _featureSetBarbarianBrutalStrikeImprovement13 ||
-            x.FeatureDefinition == _featureSetBarbarianBrutalStrikeImprovement17);
+            x.FeatureDefinition == _featureSetBarbarianBrutalStrikeImprovement17 ||
+            x.FeatureDefinition == FeatureSetBarbarianBrutalCritical ||
+            x.FeatureDefinition == AttributeModifierBarbarianBrutalCriticalAdd);
 
         if (Main.Settings.EnableBarbarianBrutalStrike)
         {
@@ -2905,22 +2983,94 @@ internal static class Tabletop2024Context
                 new FeatureUnlockByLevel(_featureSetBarbarianBrutalStrikeImprovement13, 13),
                 new FeatureUnlockByLevel(_featureSetBarbarianBrutalStrikeImprovement17, 17));
         }
-
-        Barbarian.FeatureUnlocks.Sort(Sorting.CompareFeatureUnlock);
-    }
-
-    internal static void SwitchBarbarianBrutalCritical()
-    {
-        Barbarian.FeatureUnlocks.RemoveAll(x =>
-            x.FeatureDefinition == FeatureSetBarbarianBrutalCritical ||
-            x.FeatureDefinition == AttributeModifierBarbarianBrutalCriticalAdd);
-
-        if (!Main.Settings.DisableBarbarianBrutalCritical)
+        else
         {
             Barbarian.FeatureUnlocks.AddRange(
                 new FeatureUnlockByLevel(FeatureSetBarbarianBrutalCritical, 9),
                 new FeatureUnlockByLevel(AttributeModifierBarbarianBrutalCriticalAdd, 13),
                 new FeatureUnlockByLevel(AttributeModifierBarbarianBrutalCriticalAdd, 17));
+        }
+
+        Barbarian.FeatureUnlocks.Sort(Sorting.CompareFeatureUnlock);
+    }
+
+    private static readonly FeatureDefinition FeatureBarbarianInstinctivePounce = FeatureDefinitionBuilder
+        .Create("FeatureBarbarianInstinctivePounce")
+        .SetGuiPresentation(Category.Feature)
+        .AddToDB();
+
+    private static void LoadBarbarianInstinctivePounce()
+    {
+        var powerBarbarianInstinctivePounceTargeting = FeatureDefinitionPowerBuilder
+            .Create(PowerBarbarianRageStart, "PowerBarbarianInstinctivePounceTargeting")
+            .SetShowCasting(false)
+            .SetEffectDescription(
+                EffectDescriptionBuilder
+                    .Create()
+                    .SetDurationData(DurationType.Round)
+                    .SetTargetingData(Side.Ally, RangeType.Distance, 12, TargetType.Position)
+                    .Build())
+            .AddCustomSubFeatures(ModifyPowerVisibility.Hidden, new CustomBehaviorFilterTargetingPositionHalfMove())
+            .AddToDB();
+
+        PowerBarbarianRageStart.AddCustomSubFeatures(
+            new PowerOrSpellFinishedByMePowerBarbarianRageStart(powerBarbarianInstinctivePounceTargeting));
+        PowerBarbarianPersistentRageStart.AddCustomSubFeatures(
+            new PowerOrSpellFinishedByMePowerBarbarianRageStart(powerBarbarianInstinctivePounceTargeting));
+        PathOfTheSavagery.PowerPrimalInstinct.AddCustomSubFeatures(
+            new PowerOrSpellFinishedByMePowerBarbarianRageStart(powerBarbarianInstinctivePounceTargeting));
+    }
+
+    private sealed class PowerOrSpellFinishedByMePowerBarbarianRageStart(FeatureDefinitionPower powerDummyTargeting)
+        : IPowerOrSpellFinishedByMe
+    {
+        public IEnumerator OnPowerOrSpellFinishedByMe(CharacterActionMagicEffect action, BaseDefinition baseDefinition)
+        {
+            if (!Main.Settings.EnableBarbarianInstinctivePounce)
+            {
+                yield break;
+            }
+
+            var attacker = action.ActingCharacter;
+            var rulesetAttacker = attacker.RulesetCharacter;
+
+            if (rulesetAttacker.GetClassLevel(Barbarian) < 7)
+            {
+                yield break;
+            }
+
+            yield return CampaignsContext.SelectPosition(action, powerDummyTargeting);
+
+            var position = action.ActionParams.Positions[0];
+
+            if (attacker.LocationPosition == position)
+            {
+                yield break;
+            }
+
+            var distance = (int)int3.Distance(attacker.LocationPosition, position);
+
+            attacker.UsedTacticalMoves -= distance;
+
+            if (attacker.UsedTacticalMoves < 0)
+            {
+                attacker.UsedTacticalMoves = 0;
+            }
+
+            attacker.UsedTacticalMovesChanged?.Invoke(attacker);
+            attacker.SpendActionType(ActionType.Bonus);
+            attacker.MyExecuteActionTacticalMove(position);
+        }
+    }
+
+    internal static void SwitchBarbarianInstinctivePounce()
+    {
+        Barbarian.FeatureUnlocks.RemoveAll(x =>
+            x.FeatureDefinition == FeatureBarbarianInstinctivePounce);
+
+        if (Main.Settings.EnableBarbarianInstinctivePounce)
+        {
+            Barbarian.FeatureUnlocks.Add(new FeatureUnlockByLevel(FeatureBarbarianInstinctivePounce, 7));
         }
 
         Barbarian.FeatureUnlocks.Sort(Sorting.CompareFeatureUnlock);
@@ -2938,6 +3088,91 @@ internal static class Tabletop2024Context
         FeatureSetBarbarianRage.GuiPresentation.description = Main.Settings.EnableBarbarianRegainOneRageAtShortRest
             ? "Feature/&FeatureSetRageExtendedDescription"
             : "Feature/&FeatureSetRageDescription";
+    }
+
+    internal static void SwitchBarbarianRelentlessRage()
+    {
+        DamageAffinityBarbarianRelentlessRage.GuiPresentation.description = Main.Settings.EnableBarbarianRelentlessRage
+            ? "Feature/&RelentlessRageExtendedDescription"
+            : "Feature/&RelentlessRageDescription";
+    }
+
+    private static void LoadBarbarianPersistentRage()
+    {
+        var powerBarbarianPersistentRegainRagePoints = FeatureDefinitionPowerBuilder
+            .Create("PowerBarbarianPersistentRegainRagePoints")
+            .SetGuiPresentation(Category.Feature)
+            .SetUsesFixed(ActivationTime.NoCost, RechargeRate.LongRest)
+            .SetShowCasting(false)
+            .AddToDB();
+
+        PowerBarbarianPersistentRageStart.AddCustomSubFeatures(
+            new CustomBehaviorPowerBarbarianPersistentRageStart(powerBarbarianPersistentRegainRagePoints));
+    }
+
+    internal static void SwitchBarbarianPersistentRage()
+    {
+        if (Main.Settings.EnableBarbarianPersistentRage)
+        {
+            ConditionRagingPersistent.durationParameter = 10;
+            ConditionRagingPersistent.GuiPresentation.description = "Action/&PersistentRageStartExtendedDescription";
+            PowerBarbarianPersistentRageStart.GuiPresentation.description =
+                "Action/&PersistentRageStartExtendedDescription";
+        }
+        else
+        {
+            ConditionRagingPersistent.durationParameter = 1;
+            ConditionRagingPersistent.GuiPresentation.description = "Action/&PersistentRageStartDescription";
+            PowerBarbarianPersistentRageStart.GuiPresentation.description = "Action/&PersistentRageStartDescription";
+        }
+    }
+
+    private sealed class CustomBehaviorPowerBarbarianPersistentRageStart(
+        FeatureDefinitionPower powerBarbarianPersistentRegainRagePoints) : IInitiativeEndListener, IOnItemEquipped
+    {
+        public IEnumerator OnInitiativeEnded(GameLocationCharacter character)
+        {
+            if (!Main.Settings.EnableBarbarianPersistentRage)
+            {
+                yield break;
+            }
+
+            var rulesetCharacter = character.RulesetCharacter;
+            var usablePower = PowerProvider.Get(powerBarbarianPersistentRegainRagePoints, rulesetCharacter);
+
+            if (rulesetCharacter.UsedRagePoints == 0 ||
+                rulesetCharacter.GetRemainingUsesOfPower(usablePower) == 0)
+            {
+                yield break;
+            }
+
+            yield return character.MyReactToDoNothing(
+                ExtraActionId.DoNothingFree,
+                character,
+                "PersistentRegainRagePoints",
+                "CustomReactionPersistentRegainRagePointsDescription"
+                    .Formatted(Category.Reaction, rulesetCharacter.UsedRagePoints),
+                ReactionValidated);
+
+            yield break;
+
+            void ReactionValidated()
+            {
+                // be silent on combat log
+                usablePower.remainingUses--;
+                rulesetCharacter.UsedRagePoints = 0;
+            }
+        }
+
+        public void OnItemEquipped(RulesetCharacterHero hero)
+        {
+            if (hero.IsWearingHeavyArmor() &&
+                hero.TryGetConditionOfCategoryAndType(
+                    AttributeDefinitions.TagEffect, ConditionRagingPersistent.Name, out var activeCondition))
+            {
+                hero.RemoveCondition(activeCondition);
+            }
+        }
     }
 
     #endregion
@@ -3127,7 +3362,7 @@ internal static class Tabletop2024Context
             .AddCustomSubFeatures(
                 ModifyPowerVisibility.Hidden,
                 PowerUsesSneakDiceTooltipModifier.Instance,
-                new CustomBehaviorWithdraw())
+                new CustomBehaviorFilterTargetingPositionHalfMove())
             .AddToDB();
 
         //
@@ -3582,42 +3817,6 @@ internal static class Tabletop2024Context
                 0,
                 0,
                 0);
-        }
-    }
-
-    private sealed class CustomBehaviorWithdraw : IFilterTargetingPosition, IIgnoreInvisibilityInterruptionCheck
-    {
-        public IEnumerator ComputeValidPositions(CursorLocationSelectPosition cursorLocationSelectPosition)
-        {
-            cursorLocationSelectPosition.validPositionsCache.Clear();
-
-            var actingCharacter = cursorLocationSelectPosition.ActionParams.ActingCharacter;
-            var positioningService = ServiceRepository.GetService<IGameLocationPositioningService>();
-            var visibilityService = ServiceRepository.GetService<IGameLocationVisibilityService>();
-
-            var halfMaxTacticalMoves = (actingCharacter.MaxTacticalMoves + 1) / 2; // half-rounded up
-            var boxInt = new BoxInt(actingCharacter.LocationPosition, int3.zero, int3.zero);
-
-            boxInt.Inflate(halfMaxTacticalMoves, 0, halfMaxTacticalMoves);
-
-            foreach (var position in boxInt.EnumerateAllPositionsWithin())
-            {
-                if (!visibilityService.MyIsCellPerceivedByCharacter(position, actingCharacter) ||
-                    !positioningService.CanPlaceCharacter(
-                        actingCharacter, position, CellHelpers.PlacementMode.Station) ||
-                    !positioningService.CanCharacterStayAtPosition_Floor(
-                        actingCharacter, position, onlyCheckCellsWithRealGround: true))
-                {
-                    continue;
-                }
-
-                cursorLocationSelectPosition.validPositionsCache.Add(position);
-
-                if (cursorLocationSelectPosition.stopwatch.Elapsed.TotalMilliseconds > 0.5)
-                {
-                    yield return null;
-                }
-            }
         }
     }
 
