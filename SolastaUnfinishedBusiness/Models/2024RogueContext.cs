@@ -100,7 +100,7 @@ internal static partial class Tabletop2024Context
         .AddCustomSubFeatures(new ActionFinishedByWithdraw())
         .AddToDB();
 
-    private static void BuildRogueCunningStrike()
+    private static void LoadRogueCunningStrike()
     {
         const string Cunning = "RogueCunningStrike";
         const string Devious = "RogueDeviousStrike";
@@ -379,7 +379,7 @@ internal static partial class Tabletop2024Context
     {
         Rogue.FeatureUnlocks.RemoveAll(x => x.FeatureDefinition == DieRollModifierRogueReliableTalent);
 
-        Rogue.FeatureUnlocks.Add(Main.Settings.EnableRogueReliableTalentAt7
+        Rogue.FeatureUnlocks.Add(Main.Settings.EnableRogueReliableTalent2024
             ? new FeatureUnlockByLevel(DieRollModifierRogueReliableTalent, 7)
             : new FeatureUnlockByLevel(DieRollModifierRogueReliableTalent, 11));
 
@@ -390,7 +390,7 @@ internal static partial class Tabletop2024Context
     {
         ProficiencyRogueSlipperyMind.Proficiencies.Remove(AttributeDefinitions.Charisma);
 
-        if (Main.Settings.EnableRogueSlipperyMind)
+        if (Main.Settings.EnableRogueSlipperyMind2024)
         {
             ProficiencyRogueSlipperyMind.Proficiencies.Add(AttributeDefinitions.Charisma);
             ProficiencyRogueSlipperyMind.GuiPresentation.description = "Feature/&RogueSlipperyMindExtendedDescription";
@@ -405,7 +405,7 @@ internal static partial class Tabletop2024Context
     {
         Rogue.FeatureUnlocks.RemoveAll(x => x.FeatureDefinition == PowerFeatSteadyAim);
 
-        if (Main.Settings.EnableRogueSteadyAim)
+        if (Main.Settings.EnableRogueSteadyAim2024)
         {
             Rogue.FeatureUnlocks.Add(new FeatureUnlockByLevel(PowerFeatSteadyAim, 3));
         }
@@ -417,7 +417,7 @@ internal static partial class Tabletop2024Context
     {
         Rogue.FeatureUnlocks.RemoveAll(x => x.FeatureDefinition == FeatureDefinitionSenses.SenseRogueBlindsense);
 
-        if (!Main.Settings.RemoveRogueBlindSense)
+        if (!Main.Settings.RemoveRogueBlindSense2024)
         {
             Rogue.FeatureUnlocks.Add(new FeatureUnlockByLevel(FeatureDefinitionSenses.SenseRogueBlindsense, 14));
         }
@@ -463,7 +463,7 @@ internal static partial class Tabletop2024Context
             x.FeatureDefinition == _featureRogueImprovedCunningStrike ||
             x.FeatureDefinition == _featureSetRogueDeviousStrike);
 
-        if (Main.Settings.EnableRogueCunningStrike)
+        if (Main.Settings.EnableRogueCunningStrike2024)
         {
             Rogue.FeatureUnlocks.AddRange(
                 new FeatureUnlockByLevel(_featureSetRogueCunningStrike, 5),
@@ -621,8 +621,6 @@ internal static partial class Tabletop2024Context
                 attacker.UsedTacticalMoves = 0;
             }
 
-            attacker.UsedTacticalMovesChanged?.Invoke(attacker);
-
             rulesetAttacker.InflictCondition(
                 ConditionWithdrawn.Name,
                 DurationType.Round,
@@ -638,8 +636,15 @@ internal static partial class Tabletop2024Context
                 0,
                 0);
 
-            attacker.SpendActionType(ActionType.Main);
-            attacker.MyExecuteActionTacticalMove(position);
+            attacker.UsedTacticalMovesChanged?.Invoke(attacker);
+
+            var actionParams = new CharacterActionParams(
+                attacker, Id.TacticalMove, MoveStance.Run, position, LocationDefinitions.Orientation.North)
+            {
+                BoolParameter3 = false, BoolParameter5 = false
+            };
+
+            action.ResultingActions.Add(new CharacterActionMove(actionParams));
         }
 
         private IEnumerator HandleKnockOut(GameLocationCharacter attacker, GameLocationCharacter defender)

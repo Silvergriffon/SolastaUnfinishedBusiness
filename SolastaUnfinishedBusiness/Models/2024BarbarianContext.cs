@@ -51,7 +51,7 @@ internal static partial class Tabletop2024Context
         .AddCustomSubFeatures(new TryAlterOutcomeAttributeCheckPrimalKnowledge())
         .AddToDB();
 
-    private static void BuildBarbarianBrutalStrike()
+    private static void LoadBarbarianBrutalStrike()
     {
         const string BrutalStrikeImprovement13 = "BarbarianBrutalStrikeImprovement13";
         const string BrutalStrikeImprovement17 = "BarbarianBrutalStrikeImprovement17";
@@ -657,7 +657,14 @@ internal static partial class Tabletop2024Context
             }
 
             attacker.UsedTacticalMovesChanged?.Invoke(attacker);
-            attacker.MyExecuteActionTacticalMove(position);
+
+            var actionParams = new CharacterActionParams(
+                attacker, Id.TacticalMove, MoveStance.Run, position, LocationDefinitions.Orientation.North)
+            {
+                BoolParameter3 = false, BoolParameter5 = false
+            };
+
+            action.ResultingActions.Add(new CharacterActionMove(actionParams));
         }
     }
 
