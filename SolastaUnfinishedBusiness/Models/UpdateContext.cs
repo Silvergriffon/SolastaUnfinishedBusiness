@@ -7,6 +7,8 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using SolastaUnfinishedBusiness.Api.LanguageExtensions;
+using SolastaUnfinishedBusiness.CustomUI;
 using UnityModManagerNet;
 
 namespace SolastaUnfinishedBusiness.Models;
@@ -27,13 +29,18 @@ internal static class UpdateContext
         {
             DisplayUpdateMessage();
         }
-        else if (Main.Settings.DisplayModMessage == 0)
+        else
         {
-            DisplayWelcomeMessage();
+            CustomModels.AlertIfModelsNotFound();
+
+            if (Main.Settings.DisplayModMessage == 0)
+            {
+                DisplayWelcomeMessage();
+            }
         }
 
-        // display mod message every 30 launches
-        Main.Settings.DisplayModMessage = (Main.Settings.DisplayModMessage + 1) % 30;
+        // display mod message every 100 launches
+        Main.Settings.DisplayModMessage = (Main.Settings.DisplayModMessage + 1) % 100;
     }
 
     private static string GetInstalledVersion()
@@ -117,11 +124,12 @@ internal static class UpdateContext
             ZipFile.ExtractToDirectory(fullZipFile, Main.ModFolder);
             File.Delete(fullZipFile);
 
-            foreach (var sourceFile in Directory.GetFiles(fullZipFolder))
+            foreach (var sourceFile in Directory.GetFiles(fullZipFolder, "*", SearchOption.AllDirectories))
             {
-                var fileName = Path.GetFileName(sourceFile);
-                var destFile = Path.Combine(Main.ModFolder, fileName);
+                var destFile = sourceFile.ReplaceFirst("SolastaUnfinishedBusiness", string.Empty);
+                var destFolder = Path.GetDirectoryName(destFile);
 
+                Directory.CreateDirectory(destFolder!);
                 File.Delete(destFile);
                 File.Move(sourceFile, destFile);
             }
