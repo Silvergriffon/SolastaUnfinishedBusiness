@@ -9,16 +9,6 @@ namespace SolastaUnfinishedBusiness.Models;
 
 internal static partial class Tabletop2024Context
 {
-    private static readonly FeatureDefinitionActionAffinity ActionAffinityPotionBonusAction =
-        FeatureDefinitionActionAffinityBuilder
-            .Create("ActionAffinityPotionBonusAction")
-            .SetGuiPresentationNoContent(true)
-            .AddCustomSubFeatures(
-                new ValidateDeviceFunctionUse((_, device, _) =>
-                    device.UsableDeviceDescription.UsableDeviceTags.Contains("Potion")))
-            .SetAuthorizedActions(Id.UseItemBonus)
-            .AddToDB();
-
     private static readonly FeatureDefinitionActionAffinity ActionAffinityPoisonBonusAction =
         FeatureDefinitionActionAffinityBuilder
             .Create("ActionAffinityPoisonBonusAction")
@@ -28,16 +18,6 @@ internal static partial class Tabletop2024Context
                     device.UsableDeviceDescription.UsableDeviceTags.Contains("Poison")))
             .SetAuthorizedActions(Id.UseItemBonus)
             .AddToDB();
-
-    private static readonly ItemPropertyDescription ItemPropertyPotionBonusAction =
-        new(RingFeatherFalling.StaticProperties[0])
-        {
-            appliesOnItemOnly = false,
-            type = ItemPropertyDescription.PropertyType.Feature,
-            featureDefinition = ActionAffinityPotionBonusAction,
-            conditionDefinition = null,
-            knowledgeAffinity = EquipmentDefinitions.KnowledgeAffinity.ActiveAndHidden
-        };
 
     private static readonly ItemPropertyDescription ItemPropertyPoisonBonusAction =
         new(RingFeatherFalling.StaticProperties[0])
@@ -53,22 +33,22 @@ internal static partial class Tabletop2024Context
     {
         if (Main.Settings.EnablePotionsBonusAction2024)
         {
-            foreach (var potion in DatabaseRepository.GetDatabase<ItemDefinition>()
+            foreach (var power in DatabaseRepository.GetDatabase<FeatureDefinitionPower>()
                          .Where(a =>
-                             a.UsableDeviceDescription != null &&
-                             a.UsableDeviceDescription.usableDeviceTags.Contains("Potion")))
+                             a.Name == "PowerFunctionAntitoxin" ||
+                             a.Name.StartsWith("PowerFunctionPotion")))
             {
-                potion.StaticProperties.TryAdd(ItemPropertyPotionBonusAction);
+                power.activationTime = RuleDefinitions.ActivationTime.BonusAction;
             }
         }
         else
         {
-            foreach (var potion in DatabaseRepository.GetDatabase<ItemDefinition>()
+            foreach (var power in DatabaseRepository.GetDatabase<FeatureDefinitionPower>()
                          .Where(a =>
-                             a.UsableDeviceDescription != null &&
-                             a.UsableDeviceDescription.usableDeviceTags.Contains("Potion")))
+                             a.Name == "PowerFunctionAntitoxin" ||
+                             a.Name.StartsWith("PowerFunctionPotion")))
             {
-                potion.StaticProperties.Clear();
+                power.activationTime = RuleDefinitions.ActivationTime.Action;
             }
         }
     }
