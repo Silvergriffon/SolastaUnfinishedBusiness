@@ -1,34 +1,9 @@
 ﻿using System.Linq;
-using SolastaUnfinishedBusiness.Builders;
-using SolastaUnfinishedBusiness.Builders.Features;
-using SolastaUnfinishedBusiness.Validators;
-using static ActionDefinitions;
-using static SolastaUnfinishedBusiness.Api.DatabaseHelper.ItemDefinitions;
 
 namespace SolastaUnfinishedBusiness.Models;
 
 internal static partial class Tabletop2024Context
 {
-    private static readonly FeatureDefinitionActionAffinity ActionAffinityPoisonBonusAction =
-        FeatureDefinitionActionAffinityBuilder
-            .Create("ActionAffinityPoisonBonusAction")
-            .SetGuiPresentationNoContent(true)
-            .AddCustomSubFeatures(
-                new ValidateDeviceFunctionUse((_, device, _) =>
-                    device.UsableDeviceDescription.UsableDeviceTags.Contains("Poison")))
-            .SetAuthorizedActions(Id.UseItemBonus)
-            .AddToDB();
-
-    private static readonly ItemPropertyDescription ItemPropertyPoisonBonusAction =
-        new(RingFeatherFalling.StaticProperties[0])
-        {
-            appliesOnItemOnly = false,
-            type = ItemPropertyDescription.PropertyType.Feature,
-            featureDefinition = ActionAffinityPoisonBonusAction,
-            conditionDefinition = null,
-            knowledgeAffinity = EquipmentDefinitions.KnowledgeAffinity.ActiveAndHidden
-        };
-
     internal static void SwitchPotionsBonusAction()
     {
         if (Main.Settings.EnablePotionsBonusAction2024)
@@ -57,22 +32,20 @@ internal static partial class Tabletop2024Context
     {
         if (Main.Settings.EnablePoisonsBonusAction2024)
         {
-            foreach (var poison in DatabaseRepository.GetDatabase<ItemDefinition>()
+            foreach (var poison in DatabaseRepository.GetDatabase<FeatureDefinitionPower>()
                          .Where(a =>
-                             a.UsableDeviceDescription != null &&
-                             a.UsableDeviceDescription.usableDeviceTags.Contains("Poison")))
+                             a.Name.StartsWith("PowerFunctionApplyPoison"))
             {
-                poison.StaticProperties.TryAdd(ItemPropertyPoisonBonusAction);
+                poison.activationTime = RuleDefinitions.ActivationTime.BonusAction;
             }
         }
         else
         {
-            foreach (var poison in DatabaseRepository.GetDatabase<ItemDefinition>()
+            foreach (var poison in DatabaseRepository.GetDatabase<FeatureDefinitionPower>()
                          .Where(a =>
-                             a.UsableDeviceDescription != null &&
-                             a.UsableDeviceDescription.usableDeviceTags.Contains("Poison")))
+                             a.Name.StartsWith("PowerFunctionApplyPoison"))
             {
-                poison.StaticProperties.Clear();
+                poison.activationTime = RuleDefinitions.ActivationTime.Action;
             }
         }
     }
