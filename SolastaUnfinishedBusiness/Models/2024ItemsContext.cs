@@ -34,7 +34,7 @@ internal static partial class Tabletop2024Context
         {
             foreach (var poison in DatabaseRepository.GetDatabase<FeatureDefinitionPower>()
                          .Where(a =>
-                             a.Name.StartsWith("PowerFunctionApplyPoison"))
+                             a.Name.StartsWith("PowerFunctionApplyPoison")))
             {
                 poison.activationTime = RuleDefinitions.ActivationTime.BonusAction;
             }
@@ -43,7 +43,7 @@ internal static partial class Tabletop2024Context
         {
             foreach (var poison in DatabaseRepository.GetDatabase<FeatureDefinitionPower>()
                          .Where(a =>
-                             a.Name.StartsWith("PowerFunctionApplyPoison"))
+                             a.Name.StartsWith("PowerFunctionApplyPoison")))
             {
                 poison.activationTime = RuleDefinitions.ActivationTime.Action;
             }
