@@ -1,6 +1,8 @@
 ﻿using HarmonyLib;
 using JetBrains.Annotations;
 using SolastaUnfinishedBusiness.Api.GameExtensions;
+using static ActionDefinitions;
+using static RuleDefinitions;
 
 namespace SolastaUnfinishedBusiness.Patches;
 
@@ -17,6 +19,23 @@ public static class RulesetItemDevicePatcher
             RulesetDeviceFunction function,
             RulesetCharacter character)
         {
+            //PATCH: Attempt to fix vanilla bug allowing infinite casts of bonus action scrolls
+            var scroll = function.UsableItemDefinition.UsableDeviceDescription.UsableDeviceTags.Contains("Scroll");
+
+            if (scroll && function.DeviceFunctionDescription.SpellDefinition.ActivationTime == ActivationTime.BonusAction)
+            {
+                __result = GameLocationCharacter.GetFromActor(character).GetActionTypeStatus(ActionType.Bonus) != ActionStatus.Spent &&
+                    GameLocationCharacter.GetFromActor(character).GetActionTypeStatus(ActionType.Bonus) != ActionStatus.Unavailable;
+                return;
+            }
+
+            if (scroll && function.DeviceFunctionDescription.SpellDefinition.ActivationTime == ActivationTime.Action)
+            {
+                __result = GameLocationCharacter.GetFromActor(character).GetActionTypeStatus(ActionType.Main) != ActionStatus.Spent &&
+                    GameLocationCharacter.GetFromActor(character).GetActionTypeStatus(ActionType.Main) != ActionStatus.Unavailable;
+                return;
+            }
+
             if (!__result)
             {
                 return;
