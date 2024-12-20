@@ -25,19 +25,16 @@ public static class RulesetItemDevicePatcher
             if (scroll && function.DeviceFunctionDescription.SpellDefinition.ActivationTime == ActivationTime.BonusAction)
             {
                 __result = GameLocationCharacter.GetFromActor(character).GetActionTypeStatus(ActionType.Bonus) != ActionStatus.Spent &&
-                    GameLocationCharacter.GetFromActor(character).GetActionTypeStatus(ActionType.Bonus) != ActionStatus.Unavailable;
+                            GameLocationCharacter.GetFromActor(character).GetActionTypeStatus(ActionType.Bonus) != ActionStatus.Unavailable &&
+                                !GameLocationCharacter.GetFromActor(character).UsedMainSpell;
                 return;
             }
 
             if (scroll && function.DeviceFunctionDescription.SpellDefinition.ActivationTime == ActivationTime.Action)
             {
                 __result = GameLocationCharacter.GetFromActor(character).GetActionTypeStatus(ActionType.Main) != ActionStatus.Spent &&
-                    GameLocationCharacter.GetFromActor(character).GetActionTypeStatus(ActionType.Main) != ActionStatus.Unavailable;
-                return;
-            }
-
-            if (!__result)
-            {
+                            GameLocationCharacter.GetFromActor(character).GetActionTypeStatus(ActionType.Main) != ActionStatus.Unavailable &&
+                                !GameLocationCharacter.GetFromActor(character).UsedBonusSpell;
                 return;
             }
 
@@ -48,18 +45,20 @@ public static class RulesetItemDevicePatcher
                 return;
             }
 
-            //PATCH: avoids infinite use of potions with 2024 potion bonus actions enabled 
+            //PATCH: avoids infinite use of power devices with bonus actions enabled 
             if (function.DeviceFunctionDescription.FeatureDefinitionPower.ActivationTime == ActivationTime.BonusAction)
             {
                 __result = GameLocationCharacter.GetFromActor(character).GetActionTypeStatus(ActionType.Bonus) != ActionStatus.Spent &&
-                    GameLocationCharacter.GetFromActor(character).GetActionTypeStatus(ActionType.Bonus) != ActionStatus.Unavailable;
+                            GameLocationCharacter.GetFromActor(character).GetActionTypeStatus(ActionType.Bonus) != ActionStatus.Unavailable;
+
                 return;
             }
 
             if (function.DeviceFunctionDescription.FeatureDefinitionPower.ActivationTime == ActivationTime.Action)
             {
                 __result = GameLocationCharacter.GetFromActor(character).GetActionTypeStatus(ActionType.Main) != ActionStatus.Spent &&
-                    GameLocationCharacter.GetFromActor(character).GetActionTypeStatus(ActionType.Main) != ActionStatus.Unavailable;
+                            GameLocationCharacter.GetFromActor(character).GetActionTypeStatus(ActionType.Main) != ActionStatus.Unavailable;
+
                 return;
             }
 
