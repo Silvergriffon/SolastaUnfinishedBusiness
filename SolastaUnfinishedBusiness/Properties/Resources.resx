@@ -672,11 +672,6 @@
       PublicKeyToken=b77a5c561934e089
     </value>
   </data>
-  <data name="PowerStepOfTheWind" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>../Resources/Powers/PowerStepOfTheWind.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral,
-      PublicKeyToken=b77a5c561934e089
-    </value>
-  </data>
   <data name="PowerCosmosOmen" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>../Resources/Powers/PowerCosmosOmen.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral,
       PublicKeyToken=b77a5c561934e089
@@ -690,6 +685,16 @@
   </data>
   <data name="PowerSilhouetteStep" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>../Resources/Powers/PowerSilhouetteStep.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral,
+      PublicKeyToken=b77a5c561934e089
+    </value>
+  </data>
+  <data name="PowerPatientDefenseNoCost" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>../Resources/Powers/PowerPatientDefenseNoCost.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral,
+      PublicKeyToken=b77a5c561934e089
+    </value>
+  </data>
+  <data name="PowerStepOfTheWindNoCost" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>../Resources/Powers/PowerStepOfTheWindNoCost.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral,
       PublicKeyToken=b77a5c561934e089
     </value>
   </data>
@@ -2428,6 +2433,11 @@
     <value>..\Resources\Subclasses\WayOfTheStormSoul.png;System.Byte[], mscorlib, Version=4.0.0.0,
       Culture=neutral,
       PublicKeyToken=b03f5f7f11d50a3a
+    </value>
+  </data>
+  <data name="WayOfTheSwordSaint" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Subclasses\WayOfTheSwordSaint.png;System.Byte[], mscorlib, Version=4.0.0.0,
+      Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
     </value>
   </data>
   <data name="WayOfTheZenArchery" type="System.Resources.ResXFileRef, System.Windows.Forms">

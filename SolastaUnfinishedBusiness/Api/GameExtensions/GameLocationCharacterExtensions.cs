@@ -636,6 +636,8 @@ public static class GameLocationCharacterExtensions
                !character.IsCharging &&
                !character.MoveStepInProgress &&
                !rulesetCharacter.IsIncapacitated &&
+               !rulesetCharacter.HasConditionOfTypeOrSubType(RuleDefinitions.ConditionCharmed) &&
+               !rulesetCharacter.HasConditionOfTypeOrSubType(RuleDefinitions.ConditionFrightened) &&
                !rulesetCharacter.HasConditionOfTypeOrSubType(RuleDefinitions.ConditionProne) &&
                !rulesetCharacter.HasConditionOfTypeOrSubType(RuleDefinitions.ConditionStunned) &&
                !rulesetCharacter.HasConditionOfTypeOrSubType(RuleDefinitions.ConditionParalyzed);
@@ -823,7 +825,7 @@ public static class GameLocationCharacterExtensions
     {
         var rulesetCharacter = instance.RulesetCharacter;
 
-        if (Main.Settings.EnableMonkDoNotRequireAttackActionForBonusUnarmoredAttack2024 ||
+        if (Main.Settings.EnableMonkMartialArts2024 ||
             rulesetCharacter.GetClassLevel(CharacterClassDefinitions.Monk) == 0)
         {
             return;

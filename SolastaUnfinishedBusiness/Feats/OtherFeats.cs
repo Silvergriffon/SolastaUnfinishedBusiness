@@ -401,7 +401,7 @@ internal static class OtherFeats
             .Create("FeatMonkInitiate")
             .SetGuiPresentation(Category.Feat)
             .SetFeatures(
-                PowerMonkPatientDefense,
+                Tabletop2024Context.FeatureSetMonkPatientDefense,
                 FeatureSetMonkStepOfTheWind,
                 FeatureSetMonkFlurryOfBlows,
                 FeatureDefinitionAttributeModifierBuilder
@@ -1041,7 +1041,7 @@ internal static class OtherFeats
             {
                 attacker.SetSpecialFeatureUses(FeatGrappler.Name, 0);
                 rulesetAttacker.DisableToggle((Id)ExtraActionId.GrappleOnUnarmedToggle);
-                GrappleContext.CustomBehaviorGrapple.ExecuteGrapple(attacker, defender).ExecuteUntilDone();
+                GrappleContext.CustomBehaviorGrapple.ExecuteGrapple(false, attacker, defender).ExecuteUntilDone();
             }
         }
     }
@@ -2024,8 +2024,6 @@ internal static class OtherFeats
                 .GetDatabase<FightingStyleDefinition>()
                 .Where(x =>
                     !FightingStyleContext.DemotedFightingStyles.Contains(x.Name) &&
-                    // backward compatibility
-                    x.Name != FightingStyleContext.PugilistName &&
                     // these should only be offered to Paladins or Rangers as FS
                     // was also lazy to implement cantrips learning under this scenario ;-)
                     x.Name != BlessedWarrior.Name &&

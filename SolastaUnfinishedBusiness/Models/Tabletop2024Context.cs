@@ -31,7 +31,8 @@ internal static partial class Tabletop2024Context
         LoadFighterSecondWind();
         LoadFighterStudiedAttacks();
         LoadFighterTacticalProgression();
-        LoadMonkHeightenedMetabolism();
+        LoadMonkFocus();
+        LoadMonkStunningStrike();
         LoadOneDndSpellGuidanceSubspells();
         LoadOneDndSpellSpareTheDying();
         LoadOneDndSpellTrueStrike();
@@ -43,7 +44,7 @@ internal static partial class Tabletop2024Context
         SwitchBarbarianInstinctivePounce();
         SwitchBarbarianPersistentRage();
         SwitchBarbarianReckless();
-        SwitchBarbarianRegainOneRageAtShortRest();
+        SwitchBarbarianRage();
         SwitchBarbarianRelentlessRage();
         SwitchBardBardMagicalSecrets();
         SwitchBardBardicInspiration();
@@ -53,7 +54,6 @@ internal static partial class Tabletop2024Context
         SwitchBardSuperiorInspiration();
         SwitchBardWordsOfCreation();
         SwitchClericChannelDivinity();
-        // SwitchClericDivineIntervention();
         SwitchClericDivineOrder();
         SwitchClericDomainLearningLevel();
         SwitchClericSearUndead();
@@ -66,11 +66,14 @@ internal static partial class Tabletop2024Context
         SwitchFighterStudiedAttacks();
         SwitchFighterTacticalProgression();
         SwitchMonkBodyAndMind();
-        SwitchMonkDoNotRequireAttackActionForBonusUnarmoredAttack();
-        SwitchMonkDoNotRequireAttackActionForFlurry();
-        SwitchMonkHeightenedMetabolism();
+        SwitchMonkDeflectAttacks();
+        SwitchMonkFocus();
+        SwitchMonkHeightenedFocus();
+        SwitchMonkMartialArts();
+        SwitchMonkStunningStrike();
+        SwitchMonkSelfRestoration();
         SwitchMonkSuperiorDefense();
-        SwitchMonkUnarmedDieTypeProgression();
+        SwitchMonkUncannyMetabolism();
         SwitchOneDndDamagingSpellsUpgrade();
         SwitchOneDndHealingSpellsUpgrade();
         SwitchOneDndPreparedSpellsTables();
@@ -103,7 +106,6 @@ internal static partial class Tabletop2024Context
         SwitchRangerRelentlessHunter();
         SwitchRangerRoving();
         SwitchRangerSpellCastingAtOne();
-        SwitchRangerVanish();
         SwitchRangerTireless();
         SwitchRogueBlindSense();
         SwitchRogueCunningStrike();
@@ -112,6 +114,7 @@ internal static partial class Tabletop2024Context
         SwitchRogueSteadyAim();
         SwitchSorcererArcaneApotheosis();
         SwitchSorcererInnateSorcery();
+        SwitchSorcererMetamagic();
         SwitchSorcererOriginLearningLevel();
         SwitchSorcererSorcerousRestorationAtLevel5();
         SwitchSurprisedEnforceDisadvantage();

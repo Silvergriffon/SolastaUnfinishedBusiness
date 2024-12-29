@@ -1,10 +1,15 @@
 {
-  "$type": "FeatureDefinition, Assembly-CSharp",
+  "$type": "FeatureDefinitionProficiency, Assembly-CSharp",
+  "proficiencyType": "Weapon",
+  "proficiencies": [
+    "KatanaType"
+  ],
+  "forbiddenItemTags": [],
   "guiPresentation": {
     "$type": "GuiPresentation, Assembly-CSharp",
-    "hidden": false,
-    "title": "Feature/&FeatureMonkHeightenedMetabolismTitle",
-    "description": "Feature/&FeatureMonkHeightenedMetabolismDescription",
+    "hidden": true,
+    "title": "Feature/&NoContentTitle",
+    "description": "Feature/&NoContentTitle",
     "spriteReference": {
       "$type": "UnityEngine.AddressableAssets.AssetReferenceSprite, Unity.Addressables",
       "m_AssetGUID": "",
@@ -24,7 +29,7 @@
     "usedInValleyDLC": false
   },
   "contentCopyright": "UserContent",
-  "guid": "4a54e95e-b93a-51d0-afe1-86204357ade5",
+  "guid": "d55c505c-ca1f-53d2-b64d-4f1c9cdf1d7c",
   "contentPack": 9999,
-  "name": "FeatureMonkHeightenedMetabolism"
+  "name": "FeatureMonkWeaponSpecializationKatanaType"
 }

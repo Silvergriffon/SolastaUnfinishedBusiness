@@ -4,7 +4,7 @@
   "parentCondition": null,
   "conditionType": "Beneficial",
   "features": [
-    "Definition:AttackModifierMonkFlurryOfBlowsUnarmedStrikeBonusFreedomHeightenedMetabolism:8d954034-4de8-58ba-8063-4b642b27b5bd"
+    "Definition:AttackModifierMonkFlurryOfBlowsUnarmedStrikeBonusHeightenedFocus:cfa93e07-ff6f-5f68-a506-7cad6e735823"
   ],
   "allowMultipleInstances": false,
   "silentWhenAdded": true,
@@ -151,7 +151,7 @@
     "usedInValleyDLC": false
   },
   "contentCopyright": "UserContent",
-  "guid": "5c6595a0-25fa-52e5-b6d7-20b3d92baf2e",
+  "guid": "71c94ad2-fd69-5785-9cfb-22519fa2bd71",
   "contentPack": 9999,
-  "name": "ConditionMonkFlurryOfBlowsFreedomHeightenedMetabolism"
+  "name": "ConditionMonkFlurryOfBlowsHeightenedFocus"
 }

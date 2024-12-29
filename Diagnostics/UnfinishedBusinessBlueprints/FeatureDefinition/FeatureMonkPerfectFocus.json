@@ -1,12 +1,10 @@
 {
-  "$type": "FightingStyleDefinition, Assembly-CSharp",
-  "features": [],
-  "condition": "RangedWeaponAttack",
+  "$type": "FeatureDefinition, Assembly-CSharp",
   "guiPresentation": {
     "$type": "GuiPresentation, Assembly-CSharp",
-    "hidden": true,
-    "title": "Feature/&NoContentTitle",
-    "description": "Feature/&NoContentTitle",
+    "hidden": false,
+    "title": "Feature/&FeatureMonkPerfectFocusTitle",
+    "description": "Feature/&FeatureMonkPerfectFocusDescription",
     "spriteReference": {
       "$type": "UnityEngine.AddressableAssets.AssetReferenceSprite, Unity.Addressables",
       "m_AssetGUID": "",
@@ -26,7 +24,7 @@
     "usedInValleyDLC": false
   },
   "contentCopyright": "UserContent",
-  "guid": "00d288b7-bce4-54f4-903e-00299392f8c6",
+  "guid": "ee2a98aa-0589-58c9-aed6-f966d5258c0a",
   "contentPack": 9999,
-  "name": "Pugilist"
+  "name": "FeatureMonkPerfectFocus"
 }
