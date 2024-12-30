@@ -274,7 +274,7 @@ public class Settings : UnityModManager.ModSettings
     // Characters - Classes
     //
 
-    public bool GrantScimitarSpecializationToBardRogue { get; set; }
+    public bool EnableBardScimitarSpecialization { get; set; }
     public bool EnableBardicInspiration2024 { get; set; }
     public bool EnableBardCounterCharm2024 { get; set; }
     public bool EnableBardExpertiseOneLevelBefore2024 { get; set; }
@@ -337,6 +337,7 @@ public class Settings : UnityModManager.ModSettings
     public bool EnableRangerTireless2024 { get; set; }
     public bool EnableRangerFeralSenses2024 { get; set; }
     public bool EnableRangerFoeSlayers2024 { get; set; }
+    public bool EnableRogueScimitarSpecialization { get; set; }
     public bool EnableRogueCunningStrike2024 { get; set; }
     public bool EnableRogueFightingStyle { get; set; }
     public bool EnableRogueReliableTalent2024 { get; set; }
