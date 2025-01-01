@@ -454,7 +454,6 @@ internal static class ToolsDisplay
         UI.Label("<color=#F0DAA0>" + Gui.Localize("Class/&DruidTitle") + ":</color>");
         UI.Label();
 
-#if false
         toggle = Main.Settings.EnableDruidElementalFury2024;
         if (UI.Toggle(Gui.Localize("ModUi/&EnableDruidElementalFury2024"), ref toggle,
                 UI.AutoWidth()))
@@ -462,7 +461,6 @@ internal static class ToolsDisplay
             Main.Settings.EnableDruidElementalFury2024 = toggle;
             Tabletop2024Context.SwitchDruidElementalFury();
         }
-#endif
 
         toggle = Main.Settings.EnableDruidPrimalOrder2024;
         if (UI.Toggle(Gui.Localize("ModUi/&EnableDruidPrimalOrder2024"), ref toggle,
