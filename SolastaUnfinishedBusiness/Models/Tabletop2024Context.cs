@@ -81,6 +81,7 @@ internal static partial class Tabletop2024Context
         LoadOneDndSpellSpareTheDying();
         LoadOneDndSpellTrueStrike();
         LoadPaladinRestoringTouch();
+        LoadPaladinRestoreLevel20Features();
         LoadRogueCunningStrike();
         LoadSorcererSorcerousRestoration();
         LoadWizardMemorizeSpell();
@@ -178,6 +179,7 @@ internal static partial class Tabletop2024Context
         SwitchWizardScholar();
         SwitchWizardSchoolOfMagicLearningLevel();
         SwitchWeaponMastery();
+        SwitchMartialChampion();
     }
 
     internal static void SwitchSurprisedEnforceDisadvantage()
@@ -236,10 +238,21 @@ internal static partial class Tabletop2024Context
     private sealed class PhysicalAttackFinishedByMeRemarkableAthlete(FeatureDefinitionPower powerDummyTargeting)
         : IPhysicalAttackFinishedByMe
     {
-        public IEnumerator OnPhysicalAttackFinishedByMe(GameLocationBattleManager battleManager, CharacterAction action,
-            GameLocationCharacter attacker, GameLocationCharacter defender, RulesetAttackMode attackMode,
-            RollOutcome rollOutcome, int damageAmount)
+        public IEnumerator OnPhysicalAttackFinishedByMe(
+            GameLocationBattleManager battleManager,
+            CharacterAction action,
+            GameLocationCharacter attacker,
+            GameLocationCharacter defender,
+            RulesetAttackMode attackMode,
+            RollOutcome rollOutcome,
+            int damageAmount)
         {
+            if (rollOutcome is not RollOutcome.CriticalSuccess ||
+                !attacker.IsMyTurn())
+            {
+                yield break;
+            }
+
             var rulesetAttacker = attacker.RulesetCharacter;
 
             yield return CampaignsContext.SelectPosition(action, powerDummyTargeting);
@@ -279,8 +292,8 @@ internal static partial class Tabletop2024Context
         }
     }
 
-    private sealed class CustomBehaviorHeroicWarrior : ITryAlterOutcomeAttack, ITryAlterOutcomeAttributeCheck,
-        ITryAlterOutcomeSavingThrow
+    private sealed class CustomBehaviorHeroicWarrior
+        : ITryAlterOutcomeAttack, ITryAlterOutcomeAttributeCheck, ITryAlterOutcomeSavingThrow
     {
         private const string ChampionHeroicWarrior = "ChampionHeroicWarrior";
 
@@ -296,7 +309,8 @@ internal static partial class Tabletop2024Context
             RulesetAttackMode attackMode,
             RulesetEffect rulesetEffect)
         {
-            if (action.AttackRollOutcome is not (RollOutcome.Failure or RollOutcome.CriticalFailure) ||
+            if (Gui.Battle == null ||
+                action.AttackRollOutcome is not (RollOutcome.Failure or RollOutcome.CriticalFailure) ||
                 attacker != helper ||
                 !helper.OncePerTurnIsValid(ChampionHeroicWarrior))
             {
@@ -328,7 +342,7 @@ internal static partial class Tabletop2024Context
                 {
                     rulesetHelper.LogCharacterActivatesAbility(
                         "Feature/&FeatureChampionHeroicWarriorTitle",
-                        "Feedback/&IsNotLuckyLower",
+                        "Feedback/&IsLower",
                         extra:
                         [
                             (ConsoleStyleDuplet.ParameterType.Negative, dieRoll.ToString()),
@@ -365,7 +379,8 @@ internal static partial class Tabletop2024Context
             GameLocationCharacter defender,
             GameLocationCharacter helper)
         {
-            if (abilityCheckData.AbilityCheckRollOutcome is not (RollOutcome.Failure or RollOutcome.CriticalFailure) ||
+            if (Gui.Battle == null ||
+                abilityCheckData.AbilityCheckRollOutcome is not (RollOutcome.Failure or RollOutcome.CriticalFailure) ||
                 helper != defender ||
                 !helper.OncePerTurnIsValid(ChampionHeroicWarrior))
             {
@@ -396,7 +411,7 @@ internal static partial class Tabletop2024Context
                 {
                     rulesetHelper.LogCharacterActivatesAbility(
                         "Feature/&FeatureChampionHeroicWarriorTitle",
-                        "Feedback/&IsNotLuckyLower",
+                        "Feedback/&IsLower",
                         extra:
                         [
                             (ConsoleStyleDuplet.ParameterType.Negative, dieRoll.ToString()),
@@ -433,7 +448,8 @@ internal static partial class Tabletop2024Context
             SavingThrowData savingThrowData,
             bool hasHitVisual)
         {
-            if (savingThrowData.SaveOutcome != RollOutcome.Failure ||
+            if (Gui.Battle == null ||
+                savingThrowData.SaveOutcome != RollOutcome.Failure ||
                 helper != defender ||
                 !helper.OncePerTurnIsValid(ChampionHeroicWarrior))
             {
@@ -469,7 +485,7 @@ internal static partial class Tabletop2024Context
                 {
                     rulesetHelper.LogCharacterActivatesAbility(
                         "Feature/&FeatureChampionHeroicWarriorTitle",
-                        "Feedback/&IsNotLuckyLower",
+                        "Feedback/&IsLower",
                         extra:
                         [
                             (ConsoleStyleDuplet.ParameterType.Negative, dieRoll.ToString()),

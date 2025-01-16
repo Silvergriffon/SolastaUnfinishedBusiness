@@ -7,6 +7,7 @@ using SolastaUnfinishedBusiness.Api.GameExtensions;
 using SolastaUnfinishedBusiness.Behaviors.Specific;
 using SolastaUnfinishedBusiness.Interfaces;
 using SolastaUnfinishedBusiness.Spells;
+using SolastaUnfinishedBusiness.Validators;
 using UnityEngine;
 using static RuleDefinitions;
 using static SolastaUnfinishedBusiness.Api.GameExtensions.GameLocationBattleExtensions;
@@ -71,8 +72,8 @@ public static class CharacterActionAttackPatcher
                     ActionDefinitions.ActionScope.Battle,
                     optionalAttackMode: attackMode) == ActionDefinitions.ActionStatus.Available;
 
-            if ((!canAttackMain && __instance.ActionType == ActionDefinitions.ActionType.Main)
-                || (!canAttackOff && __instance.ActionType == ActionDefinitions.ActionType.Bonus))
+            if ((!canAttackMain && __instance.ActionType == ActionDefinitions.ActionType.Main) ||
+                (!canAttackOff && __instance.ActionType == ActionDefinitions.ActionType.Bonus))
             {
                 // ReSharper disable once InvocationIsSkipped
                 Trace.Assert(false,
@@ -93,7 +94,8 @@ public static class CharacterActionAttackPatcher
 
             var targets = actionParams.TargetCharacters;
             var target = targets[0];
-            var defenderWasConscious = !target.RulesetActor.IsDeadOrDyingOrUnconscious;
+            var rulesetDefender = target.RulesetActor;
+            var defenderWasConscious = !rulesetDefender.IsDeadOrDyingOrUnconscious;
 
             // Check if the attack is possible, and compute modifiers
             var attackParams = new BattleDefinitions.AttackEvaluationParams();
@@ -131,6 +133,45 @@ public static class CharacterActionAttackPatcher
                 attackModifier = attackModifiers[0];
             }
 
+            //PATCH: registers which weapon types were used so far on attacks
+            ValidatorsCharacter.RegisterWeaponTypeUsed(actingCharacter, attackMode);
+
+            //PATCH: allow custom behavior when physical attack initiates
+            if (Gui.Battle != null)
+            {
+                foreach (var attackInitiated in
+                         actingCharacter.RulesetCharacter.GetSubFeaturesByType<IPhysicalAttackInitiatedByMe>())
+                {
+                    yield return attackInitiated.OnPhysicalAttackInitiatedByMe(
+                        battleManager, __instance, actingCharacter, target, attackModifier, attackMode);
+                }
+            }
+
+            //PATCH: allow custom behavior when physical attack initiates on me
+            if (Gui.Battle != null)
+            {
+                foreach (var attackInitiated in
+                         target.RulesetCharacter.GetSubFeaturesByType<IPhysicalAttackInitiatedOnMe>())
+                {
+                    yield return attackInitiated.OnPhysicalAttackInitiatedOnMe(
+                        battleManager, __instance, actingCharacter, target, attackModifier, attackMode);
+                }
+            }
+
+            //PATCH: allow custom behavior when physical attack initiates on me or ally
+            if (Gui.Battle != null)
+            {
+                foreach (var ally in Gui.Battle.GetContenders(actingCharacter))
+                {
+                    foreach (var physicalAttackInitiatedOnMeOrAlly in ally.RulesetCharacter
+                                 .GetSubFeaturesByType<IPhysicalAttackInitiatedOnMeOrAlly>())
+                    {
+                        yield return physicalAttackInitiatedOnMeOrAlly.OnPhysicalAttackInitiatedOnMeOrAlly(
+                            battleManager, __instance, actingCharacter, target, ally, attackModifier, attackMode);
+                    }
+                }
+            }
+
             yield return battleManager.HandleCharacterPhysicalAttackInitiated(
                 __instance, actingCharacter, target, attackModifier, attackMode);
 
@@ -140,8 +181,7 @@ public static class CharacterActionAttackPatcher
             //BEGIN PATCH
             //fix vanilla to consider all actions that are an opportunity attack
             //var opportunity = __instance.ActionId == ActionDefinitions.Id.AttackOpportunity;
-            var opportunity = __instance.ActionType == ActionDefinitions.ActionType.Reaction &&
-                              __instance.ActionDefinition.classNameOverride == "Attack";
+            var opportunity = attackParams.opportunityAttack;
             //END PATCH
 
             var rangeAttack = attackModifier.Proximity == AttackProximity.Range;
@@ -154,7 +194,7 @@ public static class CharacterActionAttackPatcher
                 __instance.AttackRoll = rulesetCharacter.RollAttackMode(
                     attackMode,
                     rangeAttack,
-                    target.RulesetActor,
+                    rulesetDefender,
                     attackMode.SourceDefinition,
                     attackModifier.AttacktoHitTrends,
                     attackModifier.IgnoreAdvantage,
@@ -234,7 +274,7 @@ public static class CharacterActionAttackPatcher
 
             if (!__instance.skipAnimationWarmup)
             {
-                // HACK : Ensure the character animation is idle, as a trigger is not considered if the animator is in a transition
+                // Ensure the character animation is idle, as a trigger is not considered if the animator is in a transition
                 yield return Coroutine.WaitForSeconds(GameConfiguration.CharacterAnimation.WaitingTimeAfterMove);
             }
 
@@ -415,7 +455,7 @@ public static class CharacterActionAttackPatcher
                     rulesetCharacter.RollAttackMode(
                         attackMode,
                         rangeAttack,
-                        target.RulesetActor,
+                        rulesetDefender,
                         attackMode.SourceDefinition,
                         attackModifier.AttacktoHitTrends,
                         attackModifier.IgnoreAdvantage,
@@ -432,14 +472,14 @@ public static class CharacterActionAttackPatcher
                 else
                 {
                     rulesetCharacter.AttackAutomaticHit?.Invoke(
-                        rulesetCharacter, target.RulesetActor, attackMode.SourceDefinition);
+                        rulesetCharacter, rulesetDefender, attackMode.SourceDefinition);
                 }
 
                 // Is this still a success?
                 if (__instance.AttackRollOutcome is RollOutcome.Success or RollOutcome.CriticalSuccess)
                 {
                     hit = true;
-                    actingCharacter.AttackedHitCreatureIds.TryAdd(target.RulesetActor.Guid);
+                    actingCharacter.AttackedHitCreatureIds.TryAdd(rulesetDefender.Guid);
 
                     // For recovering ammunition
                     rulesetCharacter.AcknowledgeAttackHit(
@@ -469,15 +509,15 @@ public static class CharacterActionAttackPatcher
                     }
 
                     // Check if the target was killed by a reaction
-                    targetKilledBySideEffect = target.RulesetActor.IsDead;
+                    targetKilledBySideEffect = rulesetDefender.IsDead;
 
                     // Saving throw?
-                    var hasBorrowedLuck = target.RulesetActor.HasConditionOfTypeOrSubType(ConditionBorrowedLuck);
+                    var hasBorrowedLuck = rulesetDefender.HasConditionOfTypeOrSubType(ConditionBorrowedLuck);
 
                     // These bool information must be store as a class member, as it is passed to HandleFailedSavingThrow
                     __instance.RolledSaveThrow = attackMode.TryRollSavingThrow(
                         rulesetCharacter,
-                        target.RulesetActor,
+                        rulesetDefender,
                         attackModifier,
                         __instance.actualEffectForms,
                         out var saveOutcome,
@@ -540,7 +580,7 @@ public static class CharacterActionAttackPatcher
                     var wasDeadOrDyingOrUnconscious = target.RulesetCharacter is { IsDeadOrDyingOrUnconscious: true };
                     var formParams = new RulesetImplementationDefinitions.ApplyFormsParams();
 
-                    formParams.FillSourceAndTarget(rulesetCharacter, target.RulesetActor);
+                    formParams.FillSourceAndTarget(rulesetCharacter, rulesetDefender);
                     formParams.FillFromAttackMode(attackMode);
                     formParams.FillAttackModeSpecialParameters(
                         __instance.RolledSaveThrow,
@@ -606,7 +646,7 @@ public static class CharacterActionAttackPatcher
                         }
                     }
 
-                    if (!wasDeadOrDyingOrUnconscious && target.RulesetActor.IsDeadOrDyingOrUnconscious)
+                    if (!wasDeadOrDyingOrUnconscious && rulesetDefender.IsDeadOrDyingOrUnconscious)
                     {
                         // Reset this since we do not want to apply the motion form later on
                         isResultingActionSpendPowerWithMotionForm = false;
@@ -620,7 +660,7 @@ public static class CharacterActionAttackPatcher
             {
                 rulesetCharacter.RollAttackMode(
                     attackMode, rangeAttack,
-                    target.RulesetActor,
+                    rulesetDefender,
                     attackMode.SourceDefinition,
                     attackModifier.AttacktoHitTrends,
                     attackModifier.IgnoreAdvantage,
@@ -711,37 +751,8 @@ public static class CharacterActionAttackPatcher
                 __instance, actingCharacter, target,
                 attackParams.attackMode, null, __instance.AttackRollOutcome, damageReceived);
 
-            // BEGIN PATCH
-
-            //PATCH: support for Sentinel Fighting Style - allows attacks of opportunity on enemies attacking allies
-            yield return AttacksOfOpportunity.ProcessOnCharacterAttackFinished(
-                battleManager, actingCharacter, target);
-
-            //PATCH: support for Defensive Strike Power - allows adding Charisma modifier and chain reactions
-            yield return DefensiveStrikeAttack.ProcessOnCharacterAttackFinished(
-                battleManager, actingCharacter, target);
-
-            //PATCH: support for Aura of the Guardian power - allows swapping hp on enemy attacking ally
-            yield return GuardianAura.ProcessOnCharacterAttackHitFinished(
-                battleManager, actingCharacter, target, attackMode, null, damageReceived);
-
-            //PATCH: supports smite spell scenarios
-            if (attackHasDamaged && !rangeAttack)
-            {
-                rulesetCharacter.ProcessConditionsMatchingInterruption(
-                    (ConditionInterruption)ExtraConditionInterruption.AttacksWithMeleeAndDamages, damageReceived);
-            }
-
-            // END PATCH
-
-            if (attackHasDamaged)
-            {
-                rulesetCharacter.ProcessConditionsMatchingInterruption(
-                    ConditionInterruption.AttacksAndDamages, damageReceived);
-            }
-
             // Did I down the target?
-            if (defenderWasConscious && target.RulesetActor.IsDeadOrDyingOrUnconscious)
+            if (defenderWasConscious && rulesetDefender.IsDeadOrDyingOrUnconscious)
             {
                 actingCharacter.EnemiesDownedByAttack++;
             }
@@ -835,7 +846,95 @@ public static class CharacterActionAttackPatcher
                 actingCharacter.MovingToDestination = false;
             }
 
-            var rulesetDefender = target.RulesetActor;
+            //BEGIN PATCH
+
+            if (Gui.Battle != null && target.RulesetCharacter is { IsDeadOrDyingOrUnconscious: false })
+            {
+                //PATCH: allow custom behavior when physical attack finished on defender
+                foreach (var feature in target.RulesetCharacter
+                             .GetSubFeaturesByType<IPhysicalAttackFinishedOnMe>())
+                {
+                    yield return feature.OnPhysicalAttackFinishedOnMe(
+                        battleManager, __instance, actingCharacter, target, attackParams.attackMode,
+                        __instance.AttackRollOutcome, damageReceived);
+                }
+            }
+
+            if (Gui.Battle != null && actingCharacter.RulesetCharacter is { IsDeadOrDyingOrUnconscious: false })
+            {
+                //PATCH: allow custom behavior when physical attack finished
+                foreach (var feature in actingCharacter.RulesetCharacter
+                             .GetSubFeaturesByType<IPhysicalAttackFinishedByMe>())
+                {
+                    yield return feature.OnPhysicalAttackFinishedByMe(
+                        battleManager, __instance, actingCharacter, target, attackParams.attackMode,
+                        __instance.AttackRollOutcome, damageReceived);
+                }
+            }
+
+            if (Gui.Battle != null)
+            {
+                // ReSharper disable once ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
+                foreach (var gameLocationAlly in Gui.Battle.GetContenders(actingCharacter, isOppositeSide: false,
+                             excludeSelf: false))
+                {
+                    var allyFeatures =
+                        gameLocationAlly.RulesetCharacter.GetSubFeaturesByType<IPhysicalAttackFinishedByMeOrAlly>();
+
+                    foreach (var feature in allyFeatures)
+                    {
+                        yield return feature.OnPhysicalAttackFinishedByMeOrAlly(
+                            battleManager, __instance, actingCharacter, target, gameLocationAlly,
+                            attackParams.attackMode, __instance.AttackRollOutcome, damageReceived);
+                    }
+                }
+            }
+
+            if (Gui.Battle != null)
+            {
+                // ReSharper disable once ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
+                foreach (var gameLocationAlly in Gui.Battle.GetContenders(actingCharacter))
+                {
+                    var allyFeatures =
+                        gameLocationAlly.RulesetCharacter.GetSubFeaturesByType<IPhysicalAttackFinishedOnMeOrAlly>();
+
+                    foreach (var feature in allyFeatures)
+                    {
+                        yield return feature.OnPhysicalAttackFinishedOnMeOrAlly(
+                            battleManager, __instance, actingCharacter, target, gameLocationAlly,
+                            attackParams.attackMode,
+                            __instance.AttackRollOutcome,
+                            damageReceived);
+                    }
+                }
+            }
+
+            //PATCH: support for Sentinel Fighting Style - allows attacks of opportunity on enemies attacking allies
+            yield return AttacksOfOpportunity.ProcessOnCharacterAttackFinished(
+                battleManager, actingCharacter, target);
+
+            //PATCH: support for Defensive Strike Power - allows adding Charisma modifier and chain reactions
+            yield return DefensiveStrikeAttack.ProcessOnCharacterAttackFinished(
+                battleManager, actingCharacter, target);
+
+            //PATCH: support for Aura of the Guardian power - allows swapping hp on enemy attacking ally
+            yield return GuardianAura.ProcessOnCharacterAttackHitFinished(
+                battleManager, actingCharacter, target, attackMode, null, damageReceived);
+
+            //PATCH: supports smite spell scenarios
+            if (attackHasDamaged && !rangeAttack)
+            {
+                rulesetCharacter.ProcessConditionsMatchingInterruption(
+                    (ConditionInterruption)ExtraConditionInterruption.AttacksWithMeleeAndDamages, damageReceived);
+            }
+
+            if (attackHasDamaged)
+            {
+                rulesetCharacter.ProcessConditionsMatchingInterruption(
+                    ConditionInterruption.AttacksAndDamages, damageReceived);
+            }
+
+            //END PATCH
 
             rulesetDefender.ProcessConditionsMatchingInterruption(
                 ConditionInterruption.PhysicalAttackReceivedExecuted);

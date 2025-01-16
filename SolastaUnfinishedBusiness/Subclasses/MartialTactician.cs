@@ -48,21 +48,16 @@ public sealed class MartialTactician : AbstractSubclass
             .AddToDB();
 
         var unlearn = BuildUnlearn();
+        var initialPool = BuildGambitPoolIncrease(4, Name);
+        var gambitPoolIncrease = BuildGambitPoolIncrease(2, "ImproviseStrategy");
 
-        var gambitPoolIncrease2 = BuildGambitPoolIncrease(2, "ImproviseStrategy");
-
-        // kept name for backward compatibility
-        var gambitPoolIncrease = FeatureDefinitionFeatureSetBuilder
-            .Create("FeatureImproviseStrategy")
-            .SetGuiPresentation("PowerUseModifierTacticianGambitPool2", Category.Feature)
-            .AddFeatureSet(gambitPoolIncrease2)
-            .AddToDB();
+        initialPool.GuiPresentation.hidden = true;
 
         Subclass = CharacterSubclassDefinitionBuilder
             .Create(Name)
             .SetGuiPresentation(Category.Subclass,
                 Sprites.GetSprite(Name, Resources.MartialTactician, 256))
-            .AddFeaturesAtLevel(3, BuildSharpMind(), BuildGambitPoolIncrease(4, Name),
+            .AddFeaturesAtLevel(3, BuildSharpMind(), initialPool,
                 GambitsBuilders.Learn3Gambit,
                 GambitsBuilders.GambitPool)
             .AddFeaturesAtLevel(7, BuildGambitPoolIncrease(),
@@ -115,9 +110,11 @@ public sealed class MartialTactician : AbstractSubclass
 
     internal static FeatureDefinition BuildGambitPoolIncrease(int number, string name)
     {
+        var tag = number > 1 ? "2" : string.Empty;
+
         return FeatureDefinitionPowerUseModifierBuilder
             .Create($"PowerUseModifierTacticianGambitPool{name}")
-            .SetGuiPresentation("PowerUseModifierTacticianGambitPool", Category.Feature)
+            .SetGuiPresentation($"PowerUseModifierTacticianGambitPool{tag}", Category.Feature)
             .SetFixedValue(GambitsBuilders.GambitPool, number)
             .AddToDB();
     }

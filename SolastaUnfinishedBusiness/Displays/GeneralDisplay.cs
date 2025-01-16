@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Linq;
 using SolastaUnfinishedBusiness.Api.ModKit;
 using SolastaUnfinishedBusiness.Models;
 using SolastaUnfinishedBusiness.Subclasses;
@@ -27,12 +28,40 @@ internal static class ToolsDisplay
         UI.Label(Gui.Localize("ModUi/&TableTopHelp1"));
         UI.Label(Gui.Localize("ModUi/&TableTopHelp2"));
         UI.Label();
-        UI.ActionButton(Gui.Localize("ModUi/&TableTopButton"), SelectTabletopSet, UI.AutoWidth());
+
+        var width = UI.Width(195f);
+
+        using (UI.HorizontalScope())
+        {
+            UI.ActionButton(Gui.Localize("ModUi/&TableTopButton"), SelectTabletopSet, width);
+            UI.ActionButton(Gui.Localize("ModUi/&ModQoL"), () => SwitchTabletop(TagType.QoL), width);
+        }
+
+        using (UI.HorizontalScope())
+        {
+            UI.ActionButton(Gui.Localize("ModUi/&TableTop2014"), () => SwitchTabletop(TagType.T2014), width);
+            UI.ActionButton(Gui.Localize("ModUi/&TableTop2024"), () => SwitchTabletop(TagType.T2024), width);
+        }
+
         UI.Label();
         DisplayTabletop2014();
         UI.Label();
         DisplayTabletop2024();
         UI.Label();
+    }
+
+    private static void SwitchTabletop(TagType tagType)
+    {
+        var properties = typeof(Settings).GetProperties()
+            .Where(prop =>
+                prop.IsDefined(typeof(Tag), false) &&
+                ((Tag[])prop.GetCustomAttributes(typeof(Tag), false)).Any(x => x.Type == tagType))
+            .ToArray();
+
+        foreach (var property in properties)
+        {
+            property.SetValue(Main.Settings, true);
+        }
     }
 
     private static void SelectTabletopSet()
@@ -322,6 +351,20 @@ internal static class ToolsDisplay
             if (UI.Toggle(Gui.Localize("ModUi/&UseWeaponMasterySystemAddCleaveDamage"), ref toggle, UI.AutoWidth()))
             {
                 Main.Settings.UseWeaponMasterySystemAddCleaveDamage = toggle;
+            }
+
+            toggle = Main.Settings.UseWeaponMasterySystemFlurryTriggersMastery;
+            if (UI.Toggle(Gui.Localize("ModUi/&UseWeaponMasterySystemFlurryTriggersMastery"), ref toggle,
+                    UI.AutoWidth()))
+            {
+                Main.Settings.UseWeaponMasterySystemFlurryTriggersMastery = toggle;
+            }
+
+            toggle = Main.Settings.UseWeaponMasterySystemNickExtraAttackTriggersMastery;
+            if (UI.Toggle(Gui.Localize("ModUi/&UseWeaponMasterySystemNickExtraAttackTriggersMastery"), ref toggle,
+                    UI.AutoWidth()))
+            {
+                Main.Settings.UseWeaponMasterySystemNickExtraAttackTriggersMastery = toggle;
             }
 
             toggle = Main.Settings.UseWeaponMasterySystemPushSave;
@@ -684,6 +727,13 @@ internal static class ToolsDisplay
             Tabletop2024Context.SwitchPaladinAbjureFoes();
         }
 
+        toggle = Main.Settings.EnablePaladinRechargeLv20Feature;
+        if (UI.Toggle(Gui.Localize("ModUi/&EnablePaladinRestoreLevel20Feature"), ref toggle, UI.AutoWidth()))
+        {
+            Main.Settings.EnablePaladinRechargeLv20Feature = toggle;
+            Tabletop2024Context.SwitchPaladinRechargeLv20Power();
+        }
+
         toggle = Main.Settings.EnablePaladinRestoringTouch2024;
         if (UI.Toggle(Gui.Localize("ModUi/&EnablePaladinRestoringTouch2024"), ref toggle, UI.AutoWidth()))
         {
@@ -954,13 +1004,6 @@ internal static class ToolsDisplay
         UI.Label();
         UI.Label("<color=#F0DAA0>" + Gui.Localize("ModUi/&DocsRaces") + ":</color>");
         UI.Label();
-
-        toggle = Main.Settings.EnableAlternateHuman;
-        if (UI.Toggle(Gui.Localize("ModUi/&EnableAlternateHuman"), ref toggle, UI.AutoWidth()))
-        {
-            Main.Settings.EnableAlternateHuman = toggle;
-            FeatsContext.SwitchFirstLevelTotalFeats();
-        }
 
         toggle = Main.Settings.RaceLightSensitivityApplyOutdoorsOnly;
         if (UI.Toggle(Gui.Localize("ModUi/&RaceLightSensitivityApplyOutdoorsOnly"), ref toggle, UI.AutoWidth()))
@@ -1241,7 +1284,6 @@ internal static class ToolsDisplay
                 UI.AutoWidth()))
         {
             Main.Settings.BlindedConditionDontAllowAttackOfOpportunity = toggle;
-            Tabletop2014Context.SwitchConditionBlindedShouldNotAllowOpportunityAttack();
         }
 
         toggle = Main.Settings.UseOfficialLightingObscurementAndVisionRules;
@@ -1410,6 +1452,13 @@ internal static class ToolsDisplay
         }
 
         UI.Label();
+
+        toggle = Main.Settings.EnableAlternateHuman;
+        if (UI.Toggle(Gui.Localize("ModUi/&EnableAlternateHuman"), ref toggle, UI.AutoWidth()))
+        {
+            Main.Settings.EnableAlternateHuman = toggle;
+            FeatsContext.SwitchFirstLevelTotalFeats();
+        }
 
         toggle = Main.Settings.UseOfficialSmallRacesDisWithHeavyWeapons;
         if (UI.Toggle(Gui.Localize("ModUi/&UseOfficialSmallRacesDisWithHeavyWeapons"), ref toggle, UI.AutoWidth()))

@@ -52,6 +52,7 @@ internal static class GrappleContext
             EffectDescriptionBuilder
                 .Create()
                 .SetTargetingData(Side.All, RangeType.Distance, 6, TargetType.IndividualsUnique)
+                .ExcludeCaster()
                 .SetImpactEffectParameters(Knock)
                 .Build())
         .AddCustomSubFeatures(new CustomBehaviorGrapple())
@@ -360,7 +361,7 @@ internal static class GrappleContext
             ConditionGrappleSourceWithGrapplerLargerName);
     }
 
-    private static bool GetGrappledActor(
+    internal static bool GetGrappledActor(
         RulesetCharacter rulesetSource,
         out RulesetCharacter rulesetTarget,
         out RulesetCondition rulesetTargetCondition)
