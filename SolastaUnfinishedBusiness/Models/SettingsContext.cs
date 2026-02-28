@@ -140,6 +140,10 @@ public static class SettingsContext
         [UsedImplicitly]
         bool UnlockBeardlessDwarves { get; set; }
 
+        [SettingTypeToggle("UnlockBeardedFemaleDwarves", SortOrder = 1073, DisplayFooter = true)]
+        [UsedImplicitly]
+        bool UnlockBeardedFemaleDwarves { get; set; }
+
         [SettingTypeDropList("EmpressGarbAppearance",
             SortOrder = 1081, DisplayFooter = false,
             Items =
@@ -170,6 +174,7 @@ public static class SettingsContext
 
         private bool _unlockAllNpcFaces = UserPreferences.GetValue<bool>("Settings/Gui/UnlockAllNpcFaces");
         private bool _unlockBeardlessDwarves = UserPreferences.GetValue<bool>("Settings/Gui/UnlockBeardlessDwarves");
+        private bool _unlockBeardedFemaleDwarves = UserPreferences.GetValue<bool>("Settings/Gui/UnlockBeardedFemaleDwarves");
         private bool _unlockEyeStyles = UserPreferences.GetValue<bool>("Settings/Gui/UnlockEyeStyles");
 
         private bool _unlockGlowingColorsForAllMarksAndTattoos =
@@ -227,6 +232,16 @@ public static class SettingsContext
             {
                 _unlockBeardlessDwarves = value;
                 UserPreferences.SetValue("Settings/Gui/UnlockBeardlessDwarves", _unlockBeardlessDwarves);
+            }
+        }
+
+        public bool UnlockBeardedFemaleDwarves
+        {
+            get => _unlockBeardedFemaleDwarves;
+            set
+            {
+                _unlockBeardedFemaleDwarves = value;
+                UserPreferences.SetValue("Settings/Gui/UnlockBeardedFemaleDwarves", _unlockBeardedFemaleDwarves);
             }
         }
 

@@ -64,6 +64,7 @@ Setting/&TooltipWidthTitle=Tooltip width
 Setting/&UnlockAdditionalLoreFriendlyNamesTitle=Unlock additional lore friendly names
 Setting/&UnlockAllNpcFacesTitle=Unlock NPC faces
 Setting/&UnlockBeardlessDwarvesTitle=Unlock beardless Dwarves
+Setting/&UnlockBeardedFemaleDwarvesTitle=Unlock bearded female Dwarves
 Setting/&UnlockEyeStylesTitle=Unlock eye styles
 Setting/&UnlockGlowingColorsForAllMarksAndTattoosTitle=Unlock glowing marks and tattoos colors
 Setting/&UnlockGlowingEyeColorsTitle=Unlock glowing eye colors

@@ -8,14 +8,15 @@ using JetBrains.Annotations;
 using SolastaUnfinishedBusiness.Api;
 using SolastaUnfinishedBusiness.Api.GameExtensions;
 using SolastaUnfinishedBusiness.Api.Helpers;
+using SolastaUnfinishedBusiness.Api.LanguageExtensions;
 using SolastaUnfinishedBusiness.CustomUI;
 using SolastaUnfinishedBusiness.Feats;
 using SolastaUnfinishedBusiness.FightingStyles;
 using SolastaUnfinishedBusiness.Models;
 using SolastaUnfinishedBusiness.Subclasses;
 using TA;
-using static RuleDefinitions;
 using static FeatureDefinitionCastSpell;
+using static RuleDefinitions;
 
 namespace SolastaUnfinishedBusiness.Patches;
 
@@ -1168,6 +1169,51 @@ public static class CharacterBuildingManagerPatcher
             }
 
             LevelUpHelper.RebuildCharacterStageProficiencyPanel(heroBuildingData.LevelingUp);
+        }
+    }
+
+    //PATCH: allows bearded female Dwarves
+    [HarmonyPatch(typeof(CharacterBuildingManager), nameof(CharacterBuildingManager.BuildMorphotypeOptionsList))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class Patch_FemaleDwarfBeards_Postfix
+    {
+        [UsedImplicitly]
+        static void Postfix(
+            ref List<string> __result,
+            MorphotypeElementDefinition.ElementCategory elementCategory,
+            CreatureSex sex,
+            CharacterRaceDefinition raceDefinition,
+            CharacterRaceDefinition subRaceDefinition)
+        {
+            // Only modify BeardShape
+            if (elementCategory != MorphotypeElementDefinition.ElementCategory.BeardShape)
+                return;
+
+            // Identify dwarves
+            bool isDwarf = subRaceDefinition != null &&
+                           subRaceDefinition.Name.Contains("Dwarf");
+
+            // Only apply to female dwarves
+            if (sex == CreatureSex.Male || !isDwarf || !SettingsContext.GuiModManagerInstance.UnlockBeardedFemaleDwarves)
+                return;
+
+            // Only Beardhape_D works
+            if (subRaceDefinition != null &&
+                subRaceDefinition.RacePresentation.MaleBeardShapeOptions != null &&
+                subRaceDefinition.RacePresentation.MaleBeardShapeOptions.Count > 0)
+            {
+                __result.AddRange("BeardShape_None", "BeardShape_D");
+                return;
+            }
+
+            if (raceDefinition != null &&
+                raceDefinition.RacePresentation.MaleBeardShapeOptions != null &&
+                raceDefinition.RacePresentation.MaleBeardShapeOptions.Count > 0)
+            {
+                __result.AddRange("BeardShape_None", "BeardShape_D");
+                return;
+            }
         }
     }
 }
