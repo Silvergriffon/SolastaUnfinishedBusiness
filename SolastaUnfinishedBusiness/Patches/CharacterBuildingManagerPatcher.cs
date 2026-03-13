@@ -1176,7 +1176,7 @@ public static class CharacterBuildingManagerPatcher
     [HarmonyPatch(typeof(CharacterBuildingManager), nameof(CharacterBuildingManager.BuildMorphotypeOptionsList))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
-    public static class Patch_FemaleDwarfBeards_Postfix
+    public static class BuildMorphotypeOptionsList_Patch
     {
         [UsedImplicitly]
         static void Postfix(
@@ -1198,21 +1198,14 @@ public static class CharacterBuildingManagerPatcher
             if (sex == CreatureSex.Male || !isDwarf || !SettingsContext.GuiModManagerInstance.UnlockBeardedFemaleDwarves)
                 return;
 
-            // Only Beardhape_D works
-            if (subRaceDefinition != null &&
-                subRaceDefinition.RacePresentation.MaleBeardShapeOptions != null &&
-                subRaceDefinition.RacePresentation.MaleBeardShapeOptions.Count > 0)
-            {
-                __result.AddRange("BeardShape_None", "BeardShape_D");
-                return;
-            }
+            // Beardshape_D is pre-built for female dwarves and belt of dwarvenkind
+            bool hasBeards =
+                subRaceDefinition?.RacePresentation?.MaleBeardShapeOptions?.Count > 0 ||
+                raceDefinition?.RacePresentation?.MaleBeardShapeOptions?.Count > 0;
 
-            if (raceDefinition != null &&
-                raceDefinition.RacePresentation.MaleBeardShapeOptions != null &&
-                raceDefinition.RacePresentation.MaleBeardShapeOptions.Count > 0)
+            if (hasBeards)
             {
                 __result.AddRange("BeardShape_None", "BeardShape_D");
-                return;
             }
         }
     }
