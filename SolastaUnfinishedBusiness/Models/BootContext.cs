@@ -88,6 +88,9 @@ internal static class BootContext
 
         ServiceRepository.GetService<IRuntimeService>().RuntimeLoaded += _ =>
         {
+            //PLAYHOUSE
+            Playhouse.LateLoad();
+
             // There are feats that need all character classes loaded before they can properly be setup.
             FeatsContext.LateLoad();
 
